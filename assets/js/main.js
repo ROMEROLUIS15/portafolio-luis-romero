@@ -33,7 +33,7 @@ function headerShadow() {
 
 /* ----- TYPING EFFECT ----- */
 var typingEffect = new Typed(".typedText",{
-  strings : ["Backend Developer", "Desarrollador Backend"],
+  strings : ["Backend Developer","Desarrollador Backend"],
   loop : true,
   typeSpeed : 100, 
   backSpeed : 80,
@@ -117,30 +117,27 @@ sections.forEach(current =>{
 window.addEventListener('scroll', scrollActive)
 
 
-/* ----- DARK MODE ----- */
-
-let toggle=document.getElementById( "toggle" );
-let lable_toggle=document.getElementById("lable_toggle");
-toggle.addEventListener("change",(event)=>{
-  let checked=event.target.checked;
-  document.body.classList.toggle("dark");
-  if(checked==true){
-    lable_toggle.innerHTML='<i class="fa-solid fa-moon"></i>';
-  }else{
-    lable_toggle.innerHTML='<i class="fa-solid fa-sun"></i>';
-  }
-})
-
 // TRANSLATE BUTTOM
 var check=document.querySelector(".check");
-check.addEventListener('click', lenguage)
+check.addEventListener('click', lenguage);
 
 function lenguage(){
   let id=check.checked;
   if(id==true){
-    location.href="es/index.html"
+    location.href="spanish/index.html"
   }else{
     location.href="../index.html"
   }
+
   
 }
+
+
+/* ----- DARK MODE ----- */
+
+const darkMode = document.querySelector(".switch");
+
+darkMode.addEventListener("click", e => {
+  darkMode.classList.toggle("active");
+  document.body.classList.toggle("active");
+})

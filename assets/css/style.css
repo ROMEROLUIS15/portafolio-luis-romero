@@ -16,6 +16,10 @@
     --third-color: rgb(192, 166, 49);
     --first-shadow-color: rgba(0, 0, 0, 0.1);
 
+    /* OTHER VARIABLES COLORS */
+    --primary: #9e6235;
+    --dark-variable: #212121;
+
 }
 
 /* ----- BASE ----- */
@@ -78,10 +82,6 @@ body{
     background: var(--body-color);
 }
 
-.dark{
-    background-color: #3d3c3c;
-    
-}
 
 .container{
     width: 100%;
@@ -102,6 +102,150 @@ nav{
     z-index: 100;
 }
 
+/* DARK MODE NAV */
+.switch{
+    width: 60px;
+    height: 30px;
+    margin-top: 30px;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: relative;
+    border-radius: 100px;
+    border: #333 solid 2px;
+    background-color: #132b41;
+}
+
+body.active #myNavMenu{
+    background-color: #313131;
+}
+
+.switch i{
+    font-size: 1rem;
+    color: #fdc21c;
+}
+
+.nav_menu_list li:last-child::before{
+    content: "";
+    position: absolute;
+    height: 25px;
+    width: 25px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: solid thin #000;
+    left: 0;
+    right: unset;
+}
+
+.nav_menu_list li:last-child.active::before{
+    right: 0;
+    left: unset;
+    border: solid thin #fff;
+}
+
+.nav_menu_list li:last-child.active i:first-child{
+    color: #fff;
+}
+
+.nav_menu_list li:last-child.active{
+    background-color: chocolate;
+    border: solid 2px #fff;
+}
+
+
+body.active nav{
+    background-color: #313131;
+}
+
+body.active nav ul{
+    background-color: #313131;
+}
+
+body.active nav ul li a{
+    color: #cfcfcf;
+}
+
+body.active .wrapper{
+    background-color: #2c2c2c;
+}
+
+body.active p{
+    color: #cfcfcf;
+}
+
+body.active .icon i{
+    color: #cfcfcf;
+}
+
+body.active #about{
+    background-color: #2c2c2c;
+}
+
+body.active #about h1{
+    color: #cfcfcf;
+}
+
+body.active #about .about-info h3{
+    color: 
+    #cfcfcf;
+}
+
+body.active #about .about-info{
+    background-color: var(--first-color);
+    color: #cfcfcf;
+}
+
+body.active .skills-header h3{
+    color: #cfcfcf;
+}
+
+body.active #projects h1{
+    color: #cfcfcf;
+}
+
+body.active #contact h1{
+    color: #cfcfcf;
+}
+
+body.active #contact span{
+    color: #cfcfcf;
+}
+
+body.active #contact .contact-info{
+    color: #cfcfcf;
+    background-color: var(--first-color);
+}
+
+body.active #contact .btn{
+    background-color: var(--first-color);
+}
+
+body.active .top-header h1{
+    background-color: #2c2c2c;
+}
+
+body.active #projects{
+    background-color: #2c2c2c;
+}
+
+body.active #contact{
+    background-color: #2c2c2c;
+}
+
+body.active {
+    color: #cfcfcf;
+}
+
+body.active footer{
+    background-color: #2c2c2c;
+}
+
+body.active footer a{
+    color: #cfcfcf;
+}
+
+
  /* TRANSLATE */
 .check{
     position: relative;
@@ -114,7 +258,7 @@ nav{
     position: absolute;
     width: 50px;
     height: 25px;
-    background: black;
+    background: var(--first-color);
     border-radius: 20px;
   }
   
@@ -136,33 +280,10 @@ nav{
   }
   
   .check:checked:before{
-    background: black;
+    background: var(--second-color);
   }
+/* END TRANSLATE */
 
-  /* END TRANSLATE */
-
-  .btn-translate{
-    display: block;
-    margin: 0 auto;
-  }
-
-
-.nav-logo{
-    /* position: absolute; */
-   position: relative;
-}
-
-#toggle{
- left: 0;
- display: none;
- transition: all 1.5s ease;
-}
-
-#lable_toggle{
-    top: 10px;
-    cursor: pointer;
-    transition: all 1.5s ease;
-}
 
 .nav-logo span{
     position: absolute;
@@ -468,6 +589,8 @@ h3{
     font-size: 15px;
     color: #777;
 }
+
+/* COVER PROJECT IMG */
 .project-box::after, .contact-info::after{
     content: "";
     position: absolute;
@@ -478,6 +601,7 @@ h3{
     transition: .4s;
     z-index: 1;
 }
+
 .project-box:hover.project-box::after,
 .contact-info:hover.contact-info::after{
     bottom: 0;
@@ -643,6 +767,11 @@ footer{
         height: 90vh;
         transition: .3s;
     }
+
+    .switch{
+        margin: 0 auto;
+    }
+
     .nav_menu_list{
         flex-direction: column;
     }
@@ -716,3 +845,39 @@ footer{
         width: 100%;
     }
 }
+
+/* Back to top buttom */
+
+html{
+    scroll-behavior: smooth;
+  }
+  
+  .back-to-top{
+    position: fixed;
+    bottom: 2rem;
+    right: 1rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background-color: black;
+    /* background-color: rgb(2,132,199); */
+    border-radius: 0.5rem;
+    /* border-radius: 10%; */
+    padding: 0.2rem;
+    text-decoration: none;
+  }
+  
+  .back-to-top span{
+    color: white;
+    font-size: 2rem;
+    transition: 0.2s ease-out;
+  }
+  
+  .back-to-top:hover{
+    background-color: black;
+  }
+  
+  .back-to-top:hover span{
+    transform: translateY(-4px);
+    color: white;
+  }
