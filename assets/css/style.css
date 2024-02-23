@@ -107,7 +107,8 @@ i{
 
 /* ------- BASE -------- */
 body{
-    background: var(--body-color);
+    background: #ffffff;
+    /* background: var(--body-color); */
 }
 
 
