@@ -80,13 +80,13 @@
             </div>
             <div class="featured-text-info">
                 <p> Desarrollador Backend con experiencia en la creación de sitios web atractivos y funcionales. 
-                    Hábil para trabajar en varios proyectos, desde sitios de comercio electrónico a pequeña escala a gran escala.
+                    Hábil para trabajar en varios proyectos, desde sitios de comercio electrónico a pequeña y gran escala.
                     Valoro la comunicación abierta y siempre estoy buscando mejorar mis habilidades a través del aprendizaje continuo.
                 </p>
             </div>
             <div class="featured-text-btn">
                 <button class="btn blue-btn">Contrátame</button>
-                <button class="btn"><a href="../assets/images/curriculum luis romero tech.pdf" download="curriculum luis romero tech">Download CV <i class="uil uil-file-alt"></i></a></button>
+                <button class="btn"><a class="download-cv" href="../assets/images/curriculum luis romero tech.pdf" download="curriculum luis romero tech">Download CV <i class="uil uil-file-alt"></i></a></button>
             </div>
             <div class="social_icons">
                 <div class="icon"><a href="https://vercel.com/luis-romeros-projects" target="_blank"><i class="fa-solid fa-briefcase"></i></a></div>
@@ -129,7 +129,7 @@
                         
                     </p>
                     <div class="about-btn">
-                        <button class="btn"><a href="../assets/images/curriculum luis romero tech.pdf" download="curriculum luis romero tech">Download CV <i class="uil uil-import"></i></a></button>
+                        <!-- <button class="btn"><a href="../assets/images/curriculum luis romero tech.pdf" download="curriculum luis romero tech">Download CV <i class="uil uil-import"></i></a></button> -->
                     </div>
                 </div>
             </div>
@@ -216,15 +216,21 @@
              <div class="col">
                 <div class="form-control">
                     <div class="form-inputs">
-                        <input type="text" class="input-field" placeholder="Nombre">
-                        <input type="text" class="input-field" placeholder="Correo Electrónico">
-                    </div>
-                    <div class="text-area">
-                        <textarea placeholder="Mensaje"></textarea>
-                    </div>
-                    <div class="form-button">
-                        <button class="btn">Enviar <i class="uil uil-message"></i></button>
-                    </div>
+                        <form class="form-inputs" action="https://formsubmit.co/lueduar15@gmail.com" method="POST">
+                            <input type="text" class="input-field" placeholder="Name" name="name">
+                            <input type="text" class="input-field" placeholder="Email" name="email">
+                        </div>
+                        <div class="text-area">
+                            
+                            <!-- <textarea placeholder="Message"></textarea> -->
+                            <input type="text" class="textarea input-field" placeholder="Message" name="message">
+                            
+                        </div>
+                        
+                        <div class="form-button">
+                            <button class="btn">Send <i class="uil uil-message"></i></button>
+                        </div>
+                    </form>
                 </div>
              </div>
           </div>

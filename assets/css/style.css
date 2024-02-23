@@ -76,6 +76,11 @@ html{
     transform: scale(1.05);
 }
 
+.download-cv{
+    color: var(--first-color);
+    text-decoration: none;
+}
+
 /* ----- GLOBAL ICONS DESIGN ----- */
 i{
     font-size: 16px;
@@ -188,6 +193,7 @@ body.active .active-link::after{
 body.active .first-span{
     background-color: var(--primary);
     color: #000000;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .typedText{
@@ -200,6 +206,7 @@ body.active .wrapper{
 
 body.active .image{
     background-color: var(--primary);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.159);
 }
 
 body.active .featured-name p{
@@ -213,16 +220,23 @@ body.active p{
 body.active .blue-btn{
     background-color: var(--primary);
     color: black;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .btn{
     background-color: var(--primary);
     color: #000000;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
+
 body.active .btn:hover{
     background: var(--primary);
     color: #000000;
     text-decoration: none;
+}
+
+body.active .download-cv{
+    color: #000000;
 }
 
 body.active .icon i{
@@ -248,6 +262,7 @@ body.active #about .about-info p{
 body.active #about .about-info{
     background-color: var(--primary);
     color: #313131;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .skills-header h3{
@@ -262,10 +277,16 @@ body.active .skills-list span{
     background-color: gray;
     color: #fdf9f9;
     border: 2px solid #212121;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active #contact h1{
     color: var(--primary);
+}
+
+body.active .project-box{
+    background: #cfcfcf;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.859);
 }
 
 body.active #contact span{
@@ -275,11 +296,13 @@ body.active #contact span{
 body.active #contact .contact-info{
     color: white;
     background-color: var(--primary);
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active #contact .btn{
     background-color: var(--primary);
-    color: white
+    color: white;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .top-header h1{
@@ -313,6 +336,7 @@ body.active ::placeholder{
 body.active .social_icons .icon{
     background-color: gray;
     border: 2px solid #212121;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .social_icons .icon i{
@@ -323,11 +347,12 @@ body.active .social_icons .icon i{
 body.active .footer-social-icons i{
     background-color: gray;
     color: #212121;
-    
 }
+
 body.active .footer-social-icons .icon{
     background-color: gray;
     border: 2px solid #212121;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.459);
 }
 
 body.active .input-field{
@@ -697,11 +722,12 @@ h3{
     content: "";
     position: absolute;
     bottom: -100%;
-    background: var(--second-color);
+    background: transparent;
     width: 100%;
     height: 100%;
     transition: .4s;
     z-index: 1;
+    cursor: pointer;
 }
 
 .project-box:hover.project-box::after,
@@ -776,7 +802,7 @@ h3{
     padding-inline: 20px;
     outline: none;
 }
-textarea{
+.textarea{
     width: 100%;
     height: 250px;
     background: transparent;
@@ -786,6 +812,11 @@ textarea{
     outline: none;
     resize: none;
 }
+
+/* ::placeholder{
+    color: red;
+} */
+
 .form-button>.btn{
     display: flex;
     align-items: center;
@@ -833,13 +864,10 @@ footer{
     gap: 30px;   
 }
 .bottom-footer{
-    font-size: 24px;
+    font-size: 15px;
     margin-top: 10px;
 }
 
-/* .footer-social-icons i{
-    background-color: red;
-} */
 
 
 /* ----- MEDIA QUERY == 1024px / RESPONSIVE ----- */
