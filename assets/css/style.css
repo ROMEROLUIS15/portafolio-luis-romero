@@ -67,9 +67,13 @@ html{
 .btn>i{
     margin-left: 10px;
 }
+
+/* first button download  */
 .btn:hover{
     background: var(--second-color);
     color: var(--color-white);
+    text-decoration: none;
+    transform: scale(1.05);
 }
 
 /* ----- GLOBAL ICONS DESIGN ----- */
@@ -115,6 +119,7 @@ nav{
     border-radius: 100px;
     border: #333 solid 2px;
     background-color: #132b41;
+    cursor: pointer;
 }
 
 body.active #myNavMenu{
@@ -149,10 +154,19 @@ body.active #myNavMenu{
 }
 
 .nav_menu_list li:last-child.active{
-    background-color: chocolate;
-    border: solid 2px #fff;
+    background-color: var(--primary);
+    border: solid 2px #212121;
 }
 
+body.active .check:before {
+    background-color: var(--primary);
+    border-radius: 2px solid black;
+}
+
+body.active .check:checked:before {
+    background-color: var(--primary);
+    border-radius: 2px solid black;
+}
 
 body.active nav{
     background-color: #313131;
@@ -162,7 +176,21 @@ body.active nav ul{
     background-color: #313131;
 }
 
+/* HOME, ABOUT. PROJECT. CONTACT */
 body.active nav ul li a{
+    color: white;
+}
+
+body.active .active-link::after{
+    background-color: white;
+}
+
+body.active .first-span{
+    background-color: var(--primary);
+    color: #000000;
+}
+
+body.active .typedText{
     color: #cfcfcf;
 }
 
@@ -170,8 +198,31 @@ body.active .wrapper{
     background-color: #2c2c2c;
 }
 
-body.active p{
+body.active .image{
+    background-color: var(--primary);
+}
+
+body.active .featured-name p{
     color: #cfcfcf;
+}
+
+body.active p{
+    color: white;
+}
+
+body.active .blue-btn{
+    background-color: var(--primary);
+    color: black;
+}
+
+body.active .btn{
+    background-color: var(--primary);
+    color: #000000;
+}
+body.active .btn:hover{
+    background: var(--primary);
+    color: #000000;
+    text-decoration: none;
 }
 
 body.active .icon i{
@@ -187,13 +238,16 @@ body.active #about h1{
 }
 
 body.active #about .about-info h3{
-    color: 
-    #cfcfcf;
+    color: #313131;
+}
+
+body.active #about .about-info p{
+    color: black;
 }
 
 body.active #about .about-info{
-    background-color: var(--first-color);
-    color: #cfcfcf;
+    background-color: var(--primary);
+    color: #313131;
 }
 
 body.active .skills-header h3{
@@ -204,21 +258,28 @@ body.active #projects h1{
     color: #cfcfcf;
 }
 
+body.active .skills-list span{
+    background-color: gray;
+    color: #fdf9f9;
+    border: 2px solid #212121;
+}
+
 body.active #contact h1{
-    color: #cfcfcf;
+    color: var(--primary);
 }
 
 body.active #contact span{
-    color: #cfcfcf;
+    color: white;
 }
 
 body.active #contact .contact-info{
-    color: #cfcfcf;
-    background-color: var(--first-color);
+    color: white;
+    background-color: var(--primary);
 }
 
 body.active #contact .btn{
-    background-color: var(--first-color);
+    background-color: var(--primary);
+    color: white
 }
 
 body.active .top-header h1{
@@ -234,7 +295,7 @@ body.active #contact{
 }
 
 body.active {
-    color: #cfcfcf;
+    color: white;
 }
 
 body.active footer{
@@ -242,7 +303,45 @@ body.active footer{
 }
 
 body.active footer a{
-    color: #cfcfcf;
+    color: white;
+}
+
+body.active ::placeholder{
+    color: white;
+}
+
+body.active .social_icons .icon{
+    background-color: gray;
+    border: 2px solid #212121;
+}
+
+body.active .social_icons .icon i{
+    
+    color: #212121;
+}
+
+body.active .footer-social-icons i{
+    background-color: gray;
+    color: #212121;
+    
+}
+body.active .footer-social-icons .icon{
+    background-color: gray;
+    border: 2px solid #212121;
+}
+
+body.active .input-field{
+    color: white;
+}
+
+body.active textarea{
+    color: white;
+}
+
+body.active .back-to-top{
+    background-color: var(--primary);
+    color: white;
+    box-shadow: 3px 3px 5px rgba(0, 0, 0, 0.859);
 }
 
 
@@ -405,6 +504,7 @@ body.active footer a{
     margin-top: 5em;
     gap: 30px;
 }
+
 .icon{
     display: flex;
     justify-content: center;
@@ -417,6 +517,7 @@ body.active footer a{
 }
 .icon:hover{
     color: var(--first-color);
+    transform: scale(1.15);
 }
 
 /* ----- FEATURED IMAGE BOX ----- */
@@ -431,6 +532,7 @@ body.active footer a{
     margin: auto 0;
     width: 380px;
     height: 380px;
+    background-color: black;
     border-radius: 55% 45% 55% 45%;
     overflow: hidden;
     animation: imgFloat 7s ease-in-out infinite;
@@ -606,6 +708,7 @@ h3{
 .contact-info:hover.contact-info::after{
     bottom: 0;
 }
+
 .project-box:hover.project-box i,
 .project-box:hover.project-box>h3,
 .project-box:hover.project-box>label{
@@ -692,6 +795,7 @@ textarea{
 }
 .form-button>.btn:hover{
     background: #00B5E7;
+    transform: scale(1.05);
 }
 .form-button i{
     font-size: 18px;
@@ -729,9 +833,13 @@ footer{
     gap: 30px;   
 }
 .bottom-footer{
-    font-size: 14px;
+    font-size: 24px;
     margin-top: 10px;
 }
+
+/* .footer-social-icons i{
+    background-color: red;
+} */
 
 
 /* ----- MEDIA QUERY == 1024px / RESPONSIVE ----- */
@@ -844,6 +952,7 @@ footer{
     .input-field{
         width: 100%;
     }
+    
 }
 
 /* Back to top buttom */
@@ -859,7 +968,7 @@ html{
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background-color: black;
+    background-color: var(--text-color-third);
     /* background-color: rgb(2,132,199); */
     border-radius: 0.5rem;
     /* border-radius: 10%; */
@@ -874,7 +983,8 @@ html{
   }
   
   .back-to-top:hover{
-    background-color: black;
+    background-color: var(--text-color-third);
+    transform: scale(1.05);
   }
   
   .back-to-top:hover span{

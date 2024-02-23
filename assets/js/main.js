@@ -137,7 +137,24 @@ function lenguage(){
 
 const darkMode = document.querySelector(".switch");
 
+
 darkMode.addEventListener("click", e => {
   darkMode.classList.toggle("active");
   document.body.classList.toggle("active");
+
+  //save  in local storage
+  if(document.body.classList.contains("active")){
+    localStorage.setItem('dark-mode', 'true')
+  } else {
+    localStorage.setItem( 'dark-mode' , 'false' )
+  }
 })
+
+//Obtein current modo
+ if(localStorage.getItem('dark-mode') === 'true'){
+   document.body.classList.add('active')
+   darkMode.classList.add("active");
+ }else{
+   document.body.classList.remove('active')
+   darkMode.classList.remove("active");
+ }
