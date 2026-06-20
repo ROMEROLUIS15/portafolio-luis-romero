@@ -12,12 +12,12 @@ function myMenuFunction() {
 const header = document.getElementById('header');
 
 window.addEventListener('scroll', () => {
+  const isScrolled = window.scrollY > 50;
   // shrink nav
-  if (window.scrollY > 50) {
-    header.classList.add('scrolled');
-  } else {
-    header.classList.remove('scrolled');
-  }
+  header.classList.toggle('scrolled', isScrolled);
+  // sync mobile menu top offset
+  const menu = document.getElementById('myNavMenu');
+  if (menu) menu.classList.toggle('nav-scrolled', isScrolled);
 
   // back-to-top visibility
   const btt = document.getElementById('backToTop');
