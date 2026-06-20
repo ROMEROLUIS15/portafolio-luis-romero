@@ -1,0 +1,101 @@
+# ============================================================
+# UPDATE CRONIX STATS
+# This workflow is triggered by a webhook FROM the Cronix repo.
+# In the Cronix repo, add a workflow that calls:
+#   curl -X POST \
+#     -H "Authorization: token ${{ secrets.PORTFOLIO_PAT }}" \
+#     -H "Accept: application/vnd.github.v3+json" \
+#     https://api.github.com/repos/ROMEROLUIS15/portafolio_lerh/dispatches \
+#     -d '{"event_type":"cronix-stats-update","client_payload":{...}}'
+# ============================================================
+name: Update Cronix Stats
+
+on:
+  repository_dispatch:
+    types: [cronix-stats-update]
+  # Also allow manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      appointments_total:
+        description: 'Total appointments managed'
+        required: false
+        default: '251'
+      appointments_this_month:
+        description: 'Appointments this month'
+        required: false
+        default: '38'
+      active_tenants:
+        description: 'Active tenants'
+        required: false
+        default: '4'
+      tests_total:
+        description: 'Total tests written'
+        required: false
+        default: '1000'
+      last_commit_msg:
+        description: 'Last commit message from Cronix'
+        required: false
+        default: 'Manual update'
+
+jobs:
+  update-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout portfolio
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build stats JSON
+        run: |
+          # Get values from dispatch payload or workflow_dispatch inputs
+          APPOINTMENTS="${{ github.event.client_payload.appointments_total || inputs.appointments_total || '251' }}"
+          MONTHLY="${{ github.event.client_payload.appointments_this_month || inputs.appointments_this_month || '38' }}"
+          TENANTS="${{ github.event.client_payload.active_tenants || inputs.active_tenants || '4' }}"
+          TESTS="${{ github.event.client_payload.tests_total || inputs.tests_total || '1000' }}"
+          COMMIT_MSG="${{ github.event.client_payload.last_commit_msg || inputs.last_commit_msg || 'Update' }}"
+          COMMIT_TYPE="${{ github.event.client_payload.commit_type || 'feat' }}"
+          VERSION="${{ github.event.client_payload.version || '1.0.0' }}"
+          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          DATE=$(date -u +"%Y-%m-%d")
+
+          # Read existing changelog (keep last 9 entries, prepend new one)
+          if [ -f cronix-stats.json ]; then
+            EXISTING_CHANGELOG=$(jq '.changelog // []' cronix-stats.json)
+          else
+            EXISTING_CHANGELOG='[]'
+          fi
+
+          NEW_ENTRY="{\"date\":\"$DATE\",\"type\":\"$COMMIT_TYPE\",\"msg\":\"$COMMIT_MSG\"}"
+          CHANGELOG=$(echo "$EXISTING_CHANGELOG" | jq --argjson entry "$NEW_ENTRY" '[$entry] + . | .[0:9]')
+
+          cat > cronix-stats.json << EOF
+          {
+            "appointments_total": $APPOINTMENTS,
+            "appointments_this_month": $MONTHLY,
+            "active_tenants": $TENANTS,
+            "uptime_pct": 99.8,
+            "tests_total": $TESTS,
+            "rls_policies": 59,
+            "rls_tables": 32,
+            "edge_functions": 9,
+            "anti_hallucination_layers": 6,
+            "anti_hallucination_mechanisms": 13,
+            "ci_checks": 138,
+            "version": "$VERSION",
+            "last_updated": "$NOW",
+            "last_commit_msg": "$COMMIT_MSG",
+            "changelog": $CHANGELOG
+          }
+          EOF
+
+      - name: Commit updated stats
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add cronix-stats.json
+          git diff --staged --quiet || git commit -m "chore: update cronix-stats.json [skip ci]"
+          git push

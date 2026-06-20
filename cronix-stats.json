@@ -1,0 +1,23 @@
+{
+  "appointments_total": 251,
+  "appointments_this_month": 38,
+  "active_tenants": 4,
+  "uptime_pct": 99.8,
+  "tests_total": 1000,
+  "rls_policies": 59,
+  "rls_tables": 32,
+  "edge_functions": 9,
+  "anti_hallucination_layers": 6,
+  "anti_hallucination_mechanisms": 13,
+  "ci_checks": 138,
+  "version": "1.0.0",
+  "last_updated": "2026-06-20T00:00:00Z",
+  "last_commit_msg": "Initial production release",
+  "changelog": [
+    {
+      "date": "2026-06-20",
+      "type": "feat",
+      "msg": "Production release — 251 appointments managed autonomously"
+    }
+  ]
+}
