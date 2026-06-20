@@ -11,7 +11,18 @@
         { t: 'muted', v: '╭─────────────────────────────────────────╮' },
         { t: 'muted', v: '│   Luis Romero · Portfolio Terminal v1.0  │' },
         { t: 'muted', v: '╰─────────────────────────────────────────╯' },
-        { t: 'output', v: "Type 'help' to see available commands." },
+        { t: 'output', v: "Hi! I'm an interactive terminal. Here's what you can explore:" },
+        { t: 'empty' },
+        { t: 'output', v: '  whoami       Who is Luis Romero' },
+        { t: 'output', v: '  skills       Technical skill set' },
+        { t: 'output', v: '  experience   Work experience' },
+        { t: 'output', v: '  projects     Recent projects' },
+        { t: 'output', v: '  cronix       Deep dive into Cronix' },
+        { t: 'output', v: '  contact      Contact information' },
+        { t: 'output', v: '  open [name]  Open a link  (github · linkedin · cronix · whatsapp)' },
+        { t: 'output', v: '  clear        Clear the screen' },
+        { t: 'empty' },
+        { t: 'muted',  v: '  ↑ ↓  navigate history  ·  type and press Enter to run' },
         { t: 'empty' },
       ],
       help: [
@@ -141,7 +152,18 @@
         { t: 'muted', v: '╭─────────────────────────────────────────╮' },
         { t: 'muted', v: '│   Luis Romero · Terminal Portafolio v1.0 │' },
         { t: 'muted', v: '╰─────────────────────────────────────────╯' },
-        { t: 'output', v: "Escribe 'help' para ver los comandos disponibles." },
+        { t: 'output', v: '¡Hola! Soy una terminal interactiva. Esto es lo que puedes explorar:' },
+        { t: 'empty' },
+        { t: 'output', v: '  whoami       Quién es Luis Romero' },
+        { t: 'output', v: '  skills       Habilidades técnicas' },
+        { t: 'output', v: '  experience   Experiencia laboral' },
+        { t: 'output', v: '  projects     Proyectos recientes' },
+        { t: 'output', v: '  cronix       Deep dive en Cronix' },
+        { t: 'output', v: '  contact      Información de contacto' },
+        { t: 'output', v: '  open [name]  Abrir enlace  (github · linkedin · cronix · whatsapp)' },
+        { t: 'output', v: '  clear        Limpiar la pantalla' },
+        { t: 'empty' },
+        { t: 'muted',  v: '  ↑ ↓  navegar historial  ·  escribe y presiona Enter para ejecutar' },
         { t: 'empty' },
       ],
       help: [
@@ -317,7 +339,11 @@
     historyIndex = -1;
 
     switch (cmd) {
-      case 'help':       printLines(c.help);       break;
+      case 'help':
+      case 'ls':
+      case 'dir':
+        printLines(c.help);
+        break;
       case 'whoami':     printLines(c.whoami);      break;
       case 'skills':     printLines(c.skills);      break;
       case 'experience': printLines(c.experience);  break;

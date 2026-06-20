@@ -10,6 +10,8 @@ La terminal detecta el idioma automáticamente (`lang="en"` o `lang="es"`).
 | Comando | Descripción EN | Descripción ES |
 |---|---|---|
 | `help` | Lists all available commands | Lista todos los comandos disponibles |
+| `ls` | Alias for `help` — lists commands | Alias de `help` — lista comandos |
+| `dir` | Alias for `help` — lists commands | Alias de `help` — lista comandos |
 | `whoami` | Profile: name, role, location, summary | Perfil: nombre, rol, ciudad, resumen |
 | `skills` | Tech stack grouped by category | Stack técnico agrupado por categoría |
 | `experience` | Work experience (IBIME + Kiura) | Experiencia laboral (IBIME + Kiura) |
