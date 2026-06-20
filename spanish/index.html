@@ -12,6 +12,7 @@
 
   <!-- CSS -->
   <link rel="stylesheet" href="../assets/css/style.css">
+  <link rel="stylesheet" href="../assets/css/terminal.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="../assets/images/logo rl.jpeg">
@@ -31,6 +32,7 @@
         <li class="nav_list"><a href="#about"       class="nav-link">Sobre mí</a></li>
         <li class="nav_list"><a href="#experience"  class="nav-link">Experiencia</a></li>
         <li class="nav_list"><a href="#projects"    class="nav-link">Proyectos</a></li>
+        <li class="nav_list"><a href="#terminal"    class="nav-link">Terminal</a></li>
         <li class="nav_list"><a href="#contact"     class="nav-link">Contacto</a></li>
       </ul>
     </div>
@@ -392,6 +394,33 @@
       </div>
     </section>
 
+    <!-- TERMINAL -->
+    <section class="section" id="terminal">
+      <div class="top-header reveal">
+        <p class="section-label">CLI Interactivo</p>
+        <h2 class="section-title">Prueba el Terminal</h2>
+        <p class="section-subtitle">Escribe <code style="color:var(--accent);background:var(--accent-light);padding:2px 8px;border-radius:5px;font-size:13px">help</code> para explorar</p>
+      </div>
+      <div class="terminal-wrapper reveal">
+        <div class="terminal-window">
+          <div class="terminal-topbar">
+            <span class="t-dot red"></span>
+            <span class="t-dot yellow"></span>
+            <span class="t-dot green"></span>
+            <span class="terminal-title">luis@portfolio:~</span>
+          </div>
+          <div class="terminal-output" id="terminalOutput"></div>
+          <div class="terminal-input-row">
+            <span class="terminal-prompt">❯</span>
+            <input type="text" id="terminalInput"
+                   autocomplete="off" autocorrect="off"
+                   autocapitalize="off" spellcheck="false"
+                   placeholder="escribe un comando...">
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- CONTACT -->
     <section class="section" id="contact">
       <div class="top-header reveal">
@@ -471,6 +500,7 @@
       <a href="#about">Sobre mí</a>
       <a href="#experience">Experiencia</a>
       <a href="#projects">Proyectos</a>
+      <a href="#terminal">Terminal</a>
       <a href="#contact">Contacto</a>
     </div>
     <div class="footer-social">
@@ -503,5 +533,6 @@
 <!-- Scripts -->
 <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
 <script src="../assets/js/main.js"></script>
+<script src="../assets/js/terminal.js"></script>
 </body>
 </html>
