@@ -226,6 +226,12 @@
   margin: 4px 0 12px;
 }
 
+/* Static value card (non-counter) */
+.metric-card .metric-value.static {
+  font-size: 22px;
+  letter-spacing: 0.04em;
+}
+
 /* Highlighted technical metric card */
 .metric-card--hi {
   border-color: var(--accent-glow);

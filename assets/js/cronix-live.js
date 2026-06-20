@@ -90,16 +90,18 @@
         value: stats.appointments_total,
         suffix: '+',
         label: 'Citas gestionadas',
-        sub: `+${stats.appointments_this_month} este mes · autónomamente`,
+        sub: 'cero intervención manual · 24/7',
         highlight: false,
+        staticVal: null,
       },
       {
-        icon: 'uil uil-users-alt',
-        value: stats.active_tenants,
+        icon: 'uil uil-robot',
+        value: null,
         suffix: '',
-        label: 'Negocios en producción',
-        sub: 'multi-tenant · datos aislados por RLS',
+        label: 'Sin humano en el flujo',
+        sub: 'WhatsApp + voz · agenda, reagenda, cancela',
         highlight: false,
+        staticVal: '24/7',
       },
     ] : [
       {
@@ -155,23 +157,27 @@
         value: stats.appointments_total,
         suffix: '+',
         label: 'Appointments managed',
-        sub: `+${stats.appointments_this_month} this month · autonomously`,
+        sub: 'zero manual intervention · 24/7',
         highlight: false,
+        staticVal: null,
       },
       {
-        icon: 'uil uil-users-alt',
-        value: stats.active_tenants,
+        icon: 'uil uil-robot',
+        value: null,
         suffix: '',
-        label: 'Businesses in production',
-        sub: 'multi-tenant · RLS-isolated data',
+        label: 'No human in the loop',
+        sub: 'WhatsApp + voice · books, reschedules, cancels',
         highlight: false,
+        staticVal: '24/7',
       },
     ];
 
     grid.innerHTML = items.map(item => `
       <div class="metric-card reveal${item.highlight ? ' metric-card--hi' : ''}">
         <i class="${item.icon} metric-icon"></i>
-        <span class="metric-value" data-target="${item.value}" data-suffix="${item.suffix}">0${item.suffix}</span>
+        <span class="metric-value${item.staticVal ? ' static' : ''}"${item.staticVal ? '' : ` data-target="${item.value}" data-suffix="${item.suffix}"`}>
+          ${item.staticVal ? item.staticVal : `0${item.suffix}`}
+        </span>
         <span class="metric-label">${item.label}</span>
         <span class="metric-sub">${item.sub}</span>
       </div>
