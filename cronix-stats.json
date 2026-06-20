@@ -11,13 +11,18 @@
   "anti_hallucination_mechanisms": 13,
   "ci_checks": 138,
   "version": "1.0.0",
-  "last_updated": "2026-06-20T00:00:00Z",
-  "last_commit_msg": "Initial production release",
+  "last_updated": "2026-06-20T21:13:01Z",
+  "last_commit_msg": "Manual update",
   "changelog": [
-    {
-      "date": "2026-06-20",
-      "type": "feat",
-      "msg": "Production release — 251 appointments managed autonomously"
-    }
-  ]
+  {
+    "date": "2026-06-20",
+    "type": "feat",
+    "msg": "Manual update"
+  },
+  {
+    "date": "2026-06-20",
+    "type": "feat",
+    "msg": "Production release — 251 appointments managed autonomously"
+  }
+]
 }
