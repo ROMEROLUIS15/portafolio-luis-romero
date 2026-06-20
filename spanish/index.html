@@ -13,6 +13,7 @@
   <!-- CSS -->
   <link rel="stylesheet" href="../assets/css/style.css">
   <link rel="stylesheet" href="../assets/css/terminal.css">
+  <link rel="stylesheet" href="../assets/css/casestudy.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="../assets/images/logo rl.jpeg">
@@ -302,6 +303,7 @@
             <div class="project-links">
               <a href="https://cronix-app.vercel.app" target="_blank" rel="noopener"><i class="uil uil-external-link-alt"></i> Demo en vivo</a>
               <a href="https://github.com/ROMEROLUIS15" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
+              <button class="btn-case-study" id="csCronixBtn"><i class="uil uil-layers"></i> Caso de Estudio</button>
             </div>
           </div>
         </div>
@@ -518,6 +520,163 @@
   <span class="material-symbols-outlined">arrow_upward</span>
 </a>
 
+<!-- CRONIX CASO DE ESTUDIO DRAWER -->
+<div class="cs-overlay" id="csOverlay"></div>
+<div class="cs-drawer" id="csDrawer">
+  <div class="cs-header">
+    <div class="cs-header-left">
+      <span class="cs-eyebrow">Caso de Estudio</span>
+      <span class="cs-title">Cronix</span>
+    </div>
+    <button class="cs-close" id="csClose" title="Cerrar">
+      <i class="uil uil-times"></i>
+    </button>
+  </div>
+  <div class="cs-body">
+
+    <!-- Stats -->
+    <div class="cs-stats">
+      <div class="cs-stat">
+        <span class="cs-stat-number">150+</span>
+        <span class="cs-stat-label">Citas reales gestionadas</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">1K+</span>
+        <span class="cs-stat-label">Tests escritos</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">59</span>
+        <span class="cs-stat-label">Políticas RLS / 32 tablas</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">9</span>
+        <span class="cs-stat-label">Edge Functions (Deno)</span>
+      </div>
+    </div>
+
+    <!-- Problema -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-question-circle"></i> El Problema</div>
+      <ul class="cs-list">
+        <li>Los negocios con citas pierden clientes porque no pueden responder 24/7 — el teléfono no contesta, WhatsApp sin leer.</li>
+        <li>Las soluciones existentes son chatbots genéricos que alucinan, confirman citas equivocadas o actúan sobre datos del cliente incorrecto.</li>
+        <li>El riesgo central: conectar un LLM a una BD real sin controles deterministas causa errores irreversibles.</li>
+      </ul>
+    </div>
+
+    <!-- Solución -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-lightbulb-alt"></i> La Solución</div>
+      <ul class="cs-list">
+        <li>Motor de orquestación propio — sin LangChain, sin framework — control total sobre cada paso del flujo.</li>
+        <li>SaaS multi-tenant: cada negocio tiene datos aislados (PostgreSQL RLS), config de agente propia y dashboard de métricas propio.</li>
+        <li>Recordatorios automáticos vía pg_cron — cero intervención manual una vez onboardeado.</li>
+      </ul>
+    </div>
+
+    <!-- Arquitectura anti-alucinación -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-shield-check"></i> Arquitectura Anti-Alucinación — 6 Capas</div>
+      <div class="cs-layers">
+        <div class="cs-layer">
+          <span class="cs-layer-num">C1</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Fast Paths</div>
+            <div class="cs-layer-desc">Consultas conocidas resueltas directamente desde la BD — el LLM nunca se invoca, superficie de alucinación cero.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">C2</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Verificación de Identidad</div>
+            <div class="cs-layer-desc">Identidad del cliente confirmada antes de cualquier lectura o escritura. Evita actuar sobre datos del cliente equivocado.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">C3</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Tool Calling Restringido</div>
+            <div class="cs-layer-desc">Function calling limitado a args declarados únicamente — el LLM no puede inventar parámetros.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">C4</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Confirmation-Gate de 2 Turnos</div>
+            <div class="cs-layer-desc">Toda mutación destructiva (agendar, reagendar, cancelar) requiere confirmación explícita del usuario en un segundo turno.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">C5</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Response Guardrail</div>
+            <div class="cs-layer-desc">Output validado contra patrones seguros conocidos antes de entregarlo. Bloquea respuestas fuera de tema o fabricadas.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">C6</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Observabilidad y Regresión en CI</div>
+            <div class="cs-layer-desc">LLM-as-judge (DeepEval) sobre golden datasets versionados en CI. Tracing multi-tenant → LangSmith. p50/p95 por negocio.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Decisiones técnicas -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-code-branch"></i> Decisiones Técnicas Clave</div>
+      <ul class="cs-list">
+        <li><strong>Sin framework de orquestación</strong> — control total sobre el orden de ejecución de tools, reintentos y lógica de fallback sin comportamiento caja negra.</li>
+        <li><strong>PostgreSQL RLS en vez de aislamiento a nivel aplicación</strong> — 59 políticas en 32 tablas, validadas con 138 asserts pgTAP. Fuga de datos entre tenants imposible a nivel BD.</li>
+        <li><strong>WebAuthn/Passkeys en vez de contraseñas</strong> — auth resistente a phishing sin secretos compartidos que puedan filtrarse.</li>
+        <li><strong>QStash para fulfillment asíncrono de pagos</strong> — procesamiento idempotente con entrega garantizada at-least-once, ningún pago se pierde en caída del servidor.</li>
+        <li><strong>Deno Edge Functions</strong> — baja latencia global para el agente de IA sin cold start en infraestructura Supabase.</li>
+      </ul>
+    </div>
+
+    <!-- Stack -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-layer-group"></i> Stack Completo</div>
+      <div class="cs-stack">
+        <span class="cs-pill hi">Node.js</span>
+        <span class="cs-pill hi">TypeScript</span>
+        <span class="cs-pill hi">Deno</span>
+        <span class="cs-pill hi">Supabase</span>
+        <span class="cs-pill hi">PostgreSQL RLS</span>
+        <span class="cs-pill hi">Groq</span>
+        <span class="cs-pill hi">Deepgram</span>
+        <span class="cs-pill">DeepEval</span>
+        <span class="cs-pill">LangSmith</span>
+        <span class="cs-pill">Redis / Upstash</span>
+        <span class="cs-pill">QStash</span>
+        <span class="cs-pill">WebAuthn</span>
+        <span class="cs-pill">PayPal</span>
+        <span class="cs-pill">NOWPayments</span>
+        <span class="cs-pill">Binance Pay</span>
+        <span class="cs-pill">pg_cron</span>
+        <span class="cs-pill">pgTAP</span>
+        <span class="cs-pill">Vitest</span>
+        <span class="cs-pill">Playwright</span>
+        <span class="cs-pill">GitHub Actions</span>
+        <span class="cs-pill">Vercel</span>
+        <span class="cs-pill">Sentry</span>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cs-links">
+      <a href="https://cronix-app.vercel.app" target="_blank" rel="noopener" class="cs-link primary">
+        <i class="uil uil-external-link-alt"></i> Demo en vivo
+      </a>
+      <a href="https://github.com/ROMEROLUIS15" target="_blank" rel="noopener" class="cs-link">
+        <i class="fa-brands fa-github"></i> GitHub
+      </a>
+    </div>
+
+  </div>
+</div>
+
 <!-- CV overlay + modal (at body level so it covers everything) -->
 <div class="cv-overlay" id="cvOverlay"></div>
 <div class="cv-dropdown-menu" id="cvModal">
@@ -534,5 +693,6 @@
 <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
 <script src="../assets/js/main.js"></script>
 <script src="../assets/js/terminal.js"></script>
+<script src="../assets/js/casestudy.js"></script>
 </body>
 </html>
