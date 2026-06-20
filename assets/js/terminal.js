@@ -11,7 +11,18 @@
         { t: 'muted', v: '╭─────────────────────────────────────────╮' },
         { t: 'muted', v: '│   Luis Romero · Portfolio Terminal v1.0  │' },
         { t: 'muted', v: '╰─────────────────────────────────────────╯' },
-        { t: 'output', v: "Type 'help' to see available commands." },
+        { t: 'output', v: "Hi! I'm an interactive terminal. Here's what you can explore:" },
+        { t: 'empty' },
+        { t: 'output', v: '  whoami       Who is Luis Romero' },
+        { t: 'output', v: '  skills       Technical skill set' },
+        { t: 'output', v: '  experience   Work experience' },
+        { t: 'output', v: '  projects     Recent projects' },
+        { t: 'output', v: '  cronix       Deep dive into Cronix' },
+        { t: 'output', v: '  contact      Contact information' },
+        { t: 'output', v: '  open [name]  Open a link  (github · linkedin · cronix · whatsapp)' },
+        { t: 'output', v: '  clear        Clear the screen' },
+        { t: 'empty' },
+        { t: 'muted',  v: '  ↑ ↓  navigate history  ·  type and press Enter to run' },
         { t: 'empty' },
       ],
       help: [
@@ -34,7 +45,7 @@
         { t: 'output', v: 'Barranquilla, Colombia' },
         { t: 'empty' },
         { t: 'output', v: '2+ years building and operating AI products in production.' },
-        { t: 'output', v: 'Founder of Cronix — a 24/7 multi-tenant SaaS managing 150+' },
+        { t: 'output', v: 'Founder of Cronix — a 24/7 multi-tenant SaaS managing 250+' },
         { t: 'output', v: 'real appointments autonomously via a custom AI orchestration' },
         { t: 'output', v: 'engine (no framework) with anti-hallucination architecture.' },
         { t: 'empty' },
@@ -73,7 +84,7 @@
         { t: 'accent', v: 'Recent Projects' },
         { t: 'empty' },
         { t: 'success', v: '  [LIVE]       Cronix' },
-        { t: 'output',  v: '               Multi-tenant SaaS — AI agent for WhatsApp & voice, 150+ appointments' },
+        { t: 'output',  v: '               Multi-tenant SaaS — AI agent for WhatsApp & voice, 250+ appointments' },
         { t: 'empty' },
         { t: 'success', v: '  [LIVE]       CMMS Hidrobombas Mérida' },
         { t: 'output',  v: '               Industrial CMMS — LangGraph multi-agent, RAG, React 19 PWA' },
@@ -95,7 +106,7 @@
         { t: 'output', v: '  Built and deployed end-to-end autonomously.' },
         { t: 'empty' },
         { t: 'accent', v: '  Stats' },
-        { t: 'output', v: '  • 150+ real appointments managed autonomously, 24/7' },
+        { t: 'output', v: '  • 250+ real appointments managed autonomously, 24/7' },
         { t: 'output', v: '  • 1,000+ tests (Vitest · Playwright E2E · pgTAP)' },
         { t: 'output', v: '  • 59 RLS policies / 32 tables validated with 138 pgTAP asserts' },
         { t: 'output', v: '  • 9 serverless Edge Functions (Deno)' },
@@ -141,7 +152,18 @@
         { t: 'muted', v: '╭─────────────────────────────────────────╮' },
         { t: 'muted', v: '│   Luis Romero · Terminal Portafolio v1.0 │' },
         { t: 'muted', v: '╰─────────────────────────────────────────╯' },
-        { t: 'output', v: "Escribe 'help' para ver los comandos disponibles." },
+        { t: 'output', v: '¡Hola! Soy una terminal interactiva. Esto es lo que puedes explorar:' },
+        { t: 'empty' },
+        { t: 'output', v: '  whoami       Quién es Luis Romero' },
+        { t: 'output', v: '  skills       Habilidades técnicas' },
+        { t: 'output', v: '  experience   Experiencia laboral' },
+        { t: 'output', v: '  projects     Proyectos recientes' },
+        { t: 'output', v: '  cronix       Deep dive en Cronix' },
+        { t: 'output', v: '  contact      Información de contacto' },
+        { t: 'output', v: '  open [name]  Abrir enlace  (github · linkedin · cronix · whatsapp)' },
+        { t: 'output', v: '  clear        Limpiar la pantalla' },
+        { t: 'empty' },
+        { t: 'muted',  v: '  ↑ ↓  navegar historial  ·  escribe y presiona Enter para ejecutar' },
         { t: 'empty' },
       ],
       help: [
@@ -164,7 +186,7 @@
         { t: 'output', v: 'Barranquilla, Colombia' },
         { t: 'empty' },
         { t: 'output', v: '2+ años construyendo y operando productos de IA en producción.' },
-        { t: 'output', v: 'Fundador de Cronix — SaaS multi-tenant 24/7 que gestiona 150+' },
+        { t: 'output', v: 'Fundador de Cronix — SaaS multi-tenant 24/7 que gestiona 250+' },
         { t: 'output', v: 'citas reales de forma autónoma con motor de orquestación propio' },
         { t: 'output', v: '(sin framework) y arquitectura anti-alucinación.' },
         { t: 'empty' },
@@ -203,7 +225,7 @@
         { t: 'accent', v: 'Proyectos Recientes' },
         { t: 'empty' },
         { t: 'success', v: '  [EN PRODUCCIÓN]  Cronix' },
-        { t: 'output',  v: '                   SaaS multi-tenant — agente IA para WhatsApp y voz, 150+ citas' },
+        { t: 'output',  v: '                   SaaS multi-tenant — agente IA para WhatsApp y voz, 250+ citas' },
         { t: 'empty' },
         { t: 'success', v: '  [EN PRODUCCIÓN]  CMMS Hidrobombas Mérida' },
         { t: 'output',  v: '                   CMMS industrial — LangGraph multi-agente, RAG, PWA React 19' },
@@ -225,7 +247,7 @@
         { t: 'output', v: '  Construido y desplegado de punta a punta de forma autónoma.' },
         { t: 'empty' },
         { t: 'accent', v: '  Estadísticas' },
-        { t: 'output', v: '  • 150+ citas reales gestionadas autónomamente, 24/7' },
+        { t: 'output', v: '  • 250+ citas reales gestionadas autónomamente, 24/7' },
         { t: 'output', v: '  • 1,000+ tests (Vitest · Playwright E2E · pgTAP)' },
         { t: 'output', v: '  • 59 políticas RLS / 32 tablas validadas con 138 asserts pgTAP' },
         { t: 'output', v: '  • 9 Edge Functions serverless (Deno)' },
@@ -317,7 +339,11 @@
     historyIndex = -1;
 
     switch (cmd) {
-      case 'help':       printLines(c.help);       break;
+      case 'help':
+      case 'ls':
+      case 'dir':
+        printLines(c.help);
+        break;
       case 'whoami':     printLines(c.whoami);      break;
       case 'skills':     printLines(c.skills);      break;
       case 'experience': printLines(c.experience);  break;

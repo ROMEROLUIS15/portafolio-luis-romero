@@ -13,6 +13,8 @@
   <!-- CSS -->
   <link rel="stylesheet" href="assets/css/style.css">
   <link rel="stylesheet" href="assets/css/terminal.css">
+  <link rel="stylesheet" href="assets/css/casestudy.css">
+  <link rel="stylesheet" href="assets/css/cronix-live.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="./assets/images/logo rl.jpeg">
@@ -32,6 +34,7 @@
         <li class="nav_list"><a href="#about"      class="nav-link">About</a></li>
         <li class="nav_list"><a href="#experience" class="nav-link">Experience</a></li>
         <li class="nav_list"><a href="#projects"   class="nav-link">Projects</a></li>
+        <li class="nav_list"><a href="#cronix-live" class="nav-link">Cronix</a></li>
         <li class="nav_list"><a href="#terminal"   class="nav-link">Terminal</a></li>
         <li class="nav_list"><a href="#contact"    class="nav-link">Contact</a></li>
       </ul>
@@ -70,7 +73,7 @@
         </p>
         <p class="hero-description reveal">
           Backend Developer &amp; AI Engineer with 2+ years building AI products in production.
-          I founded <strong>Cronix</strong> — a 24/7 multi-tenant SaaS managing 150+ real appointments
+          I founded <strong>Cronix</strong> — a 24/7 multi-tenant SaaS managing 250+ real appointments
           autonomously. I design anti-hallucination architectures, RAG pipelines and agentic systems from scratch.
         </p>
         <div class="hero-stats reveal">
@@ -79,7 +82,7 @@
             <span class="stat-label">Years experience</span>
           </div>
           <div class="stat-item">
-            <span class="stat-number">150+</span>
+            <span class="stat-number">250+</span>
             <span class="stat-label">Real appointments managed</span>
           </div>
           <div class="stat-item">
@@ -294,7 +297,7 @@
             </div>
             <p class="project-desc">
               Multi-tenant SaaS for appointment-based businesses. Built and deployed autonomously end-to-end.
-              24/7 in production with 150+ real appointments managed and automatic reminders via pg_cron — no human intervention.
+              24/7 in production with 250+ real appointments managed and automatic reminders via pg_cron — no human intervention.
               Custom AI orchestration engine (no framework) for WhatsApp &amp; voice with 12 capabilities, 6-layer anti-hallucination architecture,
               LLM-as-judge evaluation suite, multi-tenant tracing and 1,000+ tests.
             </p>
@@ -307,6 +310,7 @@
             <div class="project-links">
               <a href="https://cronix-app.vercel.app" target="_blank" rel="noopener"><i class="uil uil-external-link-alt"></i> Live Demo</a>
               <a href="https://github.com/ROMEROLUIS15" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
+              <button class="btn-case-study" id="csCronixBtn"><i class="uil uil-layers"></i> Case Study</button>
             </div>
           </div>
         </div>
@@ -405,6 +409,43 @@
         </div>
         </div><!-- /projects-row -->
 
+      </div>
+    </section>
+
+    <!-- CRONIX LIVE -->
+    <section class="section" id="cronix-live">
+      <div class="top-header reveal">
+        <p class="section-label">Cronix — Live Stats</p>
+        <h2 class="section-title">Built and running in production</h2>
+        <p class="section-subtitle">Real numbers pulled from the codebase on every push</p>
+        <div style="display:flex;align-items:center;gap:12px;justify-content:center;margin-top:12px;flex-wrap:wrap;">
+          <div class="live-badge"><span class="live-dot"></span> Live data</div>
+          <span class="live-updated" id="liveUpdated"></span>
+          <span class="live-updated" id="lastCommit" style="color:var(--accent);"></span>
+        </div>
+      </div>
+
+      <!-- Metrics -->
+      <div class="metrics-grid" id="metricsGrid">
+        <!-- Populated by JS -->
+      </div>
+
+      <!-- Changelog -->
+      <div class="changelog reveal">
+        <div class="changelog-title">Recent Cronix Updates</div>
+        <div class="changelog-list" id="changelogList">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <!-- AI Architecture -->
+      <div class="top-header reveal" style="margin-bottom:32px">
+        <p class="section-label">AI Engineering</p>
+        <h2 class="section-title">How I build anti-hallucination AI</h2>
+        <p class="section-subtitle">The 6-layer architecture behind Cronix's AI agent — click each layer to expand</p>
+      </div>
+      <div class="ai-diagram" id="aiDiagram">
+        <!-- Populated by JS -->
       </div>
     </section>
 
@@ -514,6 +555,7 @@
       <a href="#about">About</a>
       <a href="#experience">Experience</a>
       <a href="#projects">Projects</a>
+      <a href="#cronix-live">Cronix</a>
       <a href="#terminal">Terminal</a>
       <a href="#contact">Contact</a>
     </div>
@@ -532,14 +574,171 @@
   <span class="material-symbols-outlined">arrow_upward</span>
 </a>
 
+<!-- CRONIX CASE STUDY DRAWER -->
+<div class="cs-overlay" id="csOverlay"></div>
+<div class="cs-drawer" id="csDrawer">
+  <div class="cs-header">
+    <div class="cs-header-left">
+      <span class="cs-eyebrow">Case Study</span>
+      <span class="cs-title">Cronix</span>
+    </div>
+    <button class="cs-close" id="csClose" title="Close">
+      <i class="uil uil-times"></i>
+    </button>
+  </div>
+  <div class="cs-body">
+
+    <!-- Stats -->
+    <div class="cs-stats">
+      <div class="cs-stat">
+        <span class="cs-stat-number">250+</span>
+        <span class="cs-stat-label">Real appointments managed</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">1K+</span>
+        <span class="cs-stat-label">Tests written</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">59</span>
+        <span class="cs-stat-label">RLS policies / 32 tables</span>
+      </div>
+      <div class="cs-stat">
+        <span class="cs-stat-number">9</span>
+        <span class="cs-stat-label">Edge Functions (Deno)</span>
+      </div>
+    </div>
+
+    <!-- Problem -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-question-circle"></i> The Problem</div>
+      <ul class="cs-list">
+        <li>Appointment-based businesses lose clients because they can't respond 24/7 — phone goes unanswered, WhatsApp unread.</li>
+        <li>Existing solutions are generic chatbots that hallucinate, confirm wrong appointments, or act on the wrong client's data.</li>
+        <li>The core risk: connecting an LLM to a real database without deterministic guardrails causes irreversible errors.</li>
+      </ul>
+    </div>
+
+    <!-- Solution -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-lightbulb-alt"></i> The Solution</div>
+      <ul class="cs-list">
+        <li>Custom AI orchestration engine — no LangChain, no framework — giving full control over every step of the flow.</li>
+        <li>Multi-tenant SaaS: each business gets isolated data (PostgreSQL RLS), its own agent config and its own metrics dashboard.</li>
+        <li>Automated reminders via pg_cron — zero manual intervention required once onboarded.</li>
+      </ul>
+    </div>
+
+    <!-- Anti-hallucination architecture -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-shield-check"></i> Anti-Hallucination Architecture — 6 Layers</div>
+      <div class="cs-layers">
+        <div class="cs-layer">
+          <span class="cs-layer-num">L1</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Fast Paths</div>
+            <div class="cs-layer-desc">Known queries resolved directly from DB — LLM never called, zero hallucination surface.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">L2</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Identity Verification</div>
+            <div class="cs-layer-desc">Client identity confirmed before any read or write. Prevents acting on the wrong client's data.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">L3</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Restricted Tool Calling</div>
+            <div class="cs-layer-desc">Function calling constrained to declared args only — the LLM cannot invent parameters.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">L4</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">2-Turn Confirmation Gate</div>
+            <div class="cs-layer-desc">Every destructive mutation (book, reschedule, cancel) requires explicit user confirmation in a second turn.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">L5</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Response Guardrail</div>
+            <div class="cs-layer-desc">Output validated against known-safe patterns before delivery. Blocks off-topic or fabricated responses.</div>
+          </div>
+        </div>
+        <div class="cs-layer">
+          <span class="cs-layer-num">L6</span>
+          <div class="cs-layer-info">
+            <div class="cs-layer-name">Observability &amp; Regression CI</div>
+            <div class="cs-layer-desc">LLM-as-judge (DeepEval) on versioned golden datasets in CI. Multi-tenant tracing → LangSmith. p50/p95 per business.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Key decisions -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-code-branch"></i> Key Technical Decisions</div>
+      <ul class="cs-list">
+        <li><strong>No framework for orchestration</strong> — full control over tool execution order, retries and fallback logic without black-box behavior.</li>
+        <li><strong>PostgreSQL RLS over application-level isolation</strong> — 59 policies across 32 tables, validated with 138 pgTAP assertions. Data leaks between tenants are impossible at the DB level.</li>
+        <li><strong>WebAuthn/Passkeys over passwords</strong> — phishing-resistant auth with no shared secrets to leak.</li>
+        <li><strong>QStash for async payment fulfillment</strong> — idempotent processing with guaranteed at-least-once delivery, no payment lost on server crash.</li>
+        <li><strong>Deno Edge Functions</strong> — global low-latency for the AI agent with no cold start on Supabase infra.</li>
+      </ul>
+    </div>
+
+    <!-- Stack -->
+    <div class="cs-section">
+      <div class="cs-section-title"><i class="uil uil-layer-group"></i> Full Stack</div>
+      <div class="cs-stack">
+        <span class="cs-pill hi">Node.js</span>
+        <span class="cs-pill hi">TypeScript</span>
+        <span class="cs-pill hi">Deno</span>
+        <span class="cs-pill hi">Supabase</span>
+        <span class="cs-pill hi">PostgreSQL RLS</span>
+        <span class="cs-pill hi">Groq</span>
+        <span class="cs-pill hi">Deepgram</span>
+        <span class="cs-pill">DeepEval</span>
+        <span class="cs-pill">LangSmith</span>
+        <span class="cs-pill">Redis / Upstash</span>
+        <span class="cs-pill">QStash</span>
+        <span class="cs-pill">WebAuthn</span>
+        <span class="cs-pill">PayPal</span>
+        <span class="cs-pill">NOWPayments</span>
+        <span class="cs-pill">Binance Pay</span>
+        <span class="cs-pill">pg_cron</span>
+        <span class="cs-pill">pgTAP</span>
+        <span class="cs-pill">Vitest</span>
+        <span class="cs-pill">Playwright</span>
+        <span class="cs-pill">GitHub Actions</span>
+        <span class="cs-pill">Vercel</span>
+        <span class="cs-pill">Sentry</span>
+      </div>
+    </div>
+
+    <!-- CTAs -->
+    <div class="cs-links">
+      <a href="https://cronix-app.vercel.app" target="_blank" rel="noopener" class="cs-link primary">
+        <i class="uil uil-external-link-alt"></i> Live Demo
+      </a>
+      <a href="https://github.com/ROMEROLUIS15" target="_blank" rel="noopener" class="cs-link">
+        <i class="fa-brands fa-github"></i> GitHub
+      </a>
+    </div>
+
+  </div>
+</div>
+
 <!-- CV overlay + modal (at body level so it covers everything) -->
 <div class="cv-overlay" id="cvOverlay"></div>
 <div class="cv-dropdown-menu" id="cvModal">
   <div class="cv-modal-title">Select language</div>
-  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_EN.pdf" download="CV_Luis_Romero_EN.pdf">
+  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_EN.pdf" download="LuisRomero_AIEngineer-Backend_2026_EN.pdf">
     <i class="uil uil-file-alt"></i> English (EN)
   </a>
-  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_ES.pdf" download="CV_Luis_Romero_ES.pdf">
+  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_ES.pdf" download="LuisRomero_AIEngineer-Backend_2026_ES.pdf">
     <i class="uil uil-file-alt"></i> Español (ES)
   </a>
 </div>
@@ -548,5 +747,7 @@
 <script src="https://unpkg.com/typed.js@2.0.16/dist/typed.umd.js"></script>
 <script src="assets/js/main.js"></script>
 <script src="assets/js/terminal.js"></script>
+<script src="assets/js/casestudy.js"></script>
+<script src="assets/js/cronix-live.js"></script>
 </body>
 </html>
