@@ -1,160 +1,180 @@
-/* ----- NAVIGATION BAR FUNCTION ----- */
-function myMenuFunction(){
-  var menuBtn = document.getElementById("myNavMenu");
+/* ============================================
+   NAVIGATION — mobile toggle
+   ============================================ */
+function myMenuFunction() {
+  const menu = document.getElementById('myNavMenu');
+  menu.classList.toggle('responsive');
+}
 
-  if(menuBtn.className === "nav-menu"){
-    menuBtn.className += " responsive";
+/* ============================================
+   NAV — shrink on scroll + active link
+   ============================================ */
+const header = document.getElementById('header');
+
+window.addEventListener('scroll', () => {
+  // shrink nav
+  if (window.scrollY > 50) {
+    header.classList.add('scrolled');
   } else {
-    menuBtn.className = "nav-menu";
+    header.classList.remove('scrolled');
   }
+
+  // back-to-top visibility
+  const btt = document.getElementById('backToTop');
+  if (btt) {
+    btt.classList.toggle('visible', window.scrollY > 400);
+  }
+
+  // active nav link
+  updateActiveLink();
+});
+
+function updateActiveLink() {
+  const sections = document.querySelectorAll('section[id]');
+  const scrollY = window.scrollY + 100;
+  sections.forEach(section => {
+    const top = section.offsetTop;
+    const height = section.offsetHeight;
+    const id = section.getAttribute('id');
+    const link = document.querySelector(`.nav-menu a[href="#${id}"]`);
+    if (link) {
+      link.classList.toggle('active-link', scrollY >= top && scrollY < top + height);
+    }
+  });
 }
 
-/* ----- ADD SHADOW ON NAVIGATION BAR WHILE SCROLLING ----- */
-window.onscroll = function() {headerShadow()};
+/* ============================================
+   DARK MODE TOGGLE
+   ============================================ */
+const darkToggle = document.getElementById('darkToggle');
 
-function headerShadow() {
-  const navHeader =document.getElementById("header");
-
-  if (document.body.scrollTop > 50 || document.documentElement.scrollTop >  50) {
-
-    navHeader.style.boxShadow = "0 1px 6px rgba(0, 0, 0, 0.1)";
-    navHeader.style.height = "70px";
-    navHeader.style.lineHeight = "70px";
-
-  } else {
-
-    navHeader.style.boxShadow = "none";
-    navHeader.style.height = "90px";
-    navHeader.style.lineHeight = "90px";
-
+function applyTheme(isDark) {
+  document.body.classList.toggle('dark', isDark);
+  if (darkToggle) {
+    darkToggle.innerHTML = isDark
+      ? '<i class="uil uil-sun"></i>'
+      : '<i class="uil uil-moon"></i>';
   }
+  localStorage.setItem('dark-mode', isDark ? 'true' : 'false');
 }
 
+// Init theme
+const savedTheme = localStorage.getItem('dark-mode');
+applyTheme(savedTheme !== 'false'); // dark by default
 
-/* ----- TYPING EFFECT ----- */
-var typingEffect = new Typed(".typedText",{
-  strings : ["a Backend Developer","un Desarrollador Backend"],
-  loop : true,
-  typeSpeed : 100, 
-  backSpeed : 80,
-  backDelay : 2000
-})
-
-
-/* ----- ## -- SCROLL REVEAL ANIMATION -- ## ----- */
-const sr = ScrollReveal({
-      origin: 'top',
-      distance: '80px',
-      duration: 2000,
-      reset: true     
-})
-
-/* -- HOME -- */
-sr.reveal('.featured-text-card',{})
-sr.reveal('.featured-name',{delay: 100})
-sr.reveal('.featured-text-info',{delay: 200})
-sr.reveal('.featured-text-btn',{delay: 200})
-sr.reveal('.social_icons',{delay: 200})
-sr.reveal('.featured-image',{delay: 300})
-
-
-/* -- PROJECT BOX -- */
-sr.reveal('.project-box',{interval: 200})
-
-/* -- HEADINGS -- */
-sr.reveal('.top-header',{})
-
-/* ----- ## -- SCROLL REVEAL LEFT_RIGHT ANIMATION -- ## ----- */
-
-/* -- ABOUT INFO & CONTACT INFO -- */
-const srLeft = ScrollReveal({
-origin: 'left',
-distance: '80px',
-duration: 2000,
-reset: true
-})
-
-srLeft.reveal('.about-info',{delay: 100})
-srLeft.reveal('.contact-info',{delay: 100})
-
-/* -- ABOUT SKILLS & FORM BOX -- */
-const srRight = ScrollReveal({
-origin: 'right',
-distance: '80px',
-duration: 2000,
-reset: true
-})
-
-srRight.reveal('.skills-box',{delay: 100})
-srRight.reveal('.form-control',{delay: 100})
-
-
-
-/* ----- CHANGE ACTIVE LINK ----- */
-
-const sections = document.querySelectorAll('section[id]')
-
-function scrollActive() {
-const scrollY = window.scrollY;
-
-sections.forEach(current =>{
-  const sectionHeight = current.offsetHeight,
-      sectionTop = current.offsetTop - 50,
-    sectionId = current.getAttribute('id')
-
-  if(scrollY > sectionTop && scrollY <= sectionTop + sectionHeight) { 
-
-      document.querySelector('.nav-menu a[href*=' + sectionId + ']').classList.add('active-link')
-
-  }  else {
-
-    document.querySelector('.nav-menu a[href*=' + sectionId + ']').classList.remove('active-link')
-
-  }
-})
+if (darkToggle) {
+  darkToggle.addEventListener('click', () => {
+    applyTheme(!document.body.classList.contains('dark'));
+  });
 }
 
-window.addEventListener('scroll', scrollActive)
-
-
-// TRANSLATE BUTTOM
-var check=document.querySelector(".check");
-check.addEventListener('click', lenguage);
-
-function lenguage(){
-  let id=check.checked;
-  if(id==true){
-    location.href="spanish/index.html"
-  }else{
-    location.href="../index.html"
-  }
-
-  
+/* ============================================
+   LANGUAGE TOGGLE
+   ============================================ */
+function goToSpanish() {
+  window.location.href = 'spanish/index.html';
+}
+function goToEnglish() {
+  window.location.href = '../index.html';
 }
 
+/* ============================================
+   TYPED.JS
+   ============================================ */
+if (document.querySelector('.typedText')) {
+  const isSpanish = document.documentElement.lang === 'es';
+  new Typed('.typedText', {
+    strings: isSpanish
+      ? ['AI Engineer', 'Desarrollador Backend', 'Node.js / TypeScript']
+      : ['AI Engineer', 'Backend Developer', 'Node.js / TypeScript'],
+    loop: true,
+    typeSpeed: 80,
+    backSpeed: 50,
+    backDelay: 2200,
+  });
+}
 
-/* ----- DARK MODE ----- */
+/* ============================================
+   SCROLL REVEAL — custom lightweight
+   ============================================ */
+function initReveal() {
+  const els = document.querySelectorAll('.reveal, .reveal-left, .reveal-right');
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry, i) => {
+      if (entry.isIntersecting) {
+        // stagger siblings inside same parent
+        const siblings = Array.from(entry.target.parentElement.querySelectorAll('.reveal, .reveal-left, .reveal-right'));
+        const idx = siblings.indexOf(entry.target);
+        setTimeout(() => {
+          entry.target.classList.add('visible');
+        }, idx * 80);
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.12 });
 
-const darkMode = document.querySelector(".switch");
+  els.forEach(el => observer.observe(el));
+}
 
+document.addEventListener('DOMContentLoaded', initReveal);
 
-darkMode.addEventListener("click", e => {
-  darkMode.classList.toggle("active");
-  document.body.classList.toggle("active");
+/* ============================================
+   CLOSE MOBILE MENU ON LINK CLICK OR OUTSIDE TAP
+   ============================================ */
+document.querySelectorAll('.nav-link').forEach(link => {
+  link.addEventListener('click', () => {
+    const menu = document.getElementById('myNavMenu');
+    if (menu) menu.classList.remove('responsive');
+  });
+});
 
-  //save  in local storage
-  if(document.body.classList.contains("active")){
-    localStorage.setItem('dark-mode', 'true')
-  } else {
-    localStorage.setItem( 'dark-mode' , 'false' )
+// Close on tap/click outside the nav
+document.addEventListener('click', (e) => {
+  const menu = document.getElementById('myNavMenu');
+  const nav  = document.getElementById('header');
+  if (menu && menu.classList.contains('responsive') && !nav.contains(e.target)) {
+    menu.classList.remove('responsive');
   }
-})
+});
 
-//Obtein current modo
- if(localStorage.getItem('dark-mode') === 'true'){
-   document.body.classList.add('active')
-   darkMode.classList.add("active");
- }else{
-   document.body.classList.remove('active')
-   darkMode.classList.remove("active");
- }
+/* ============================================
+   CV MODAL TOGGLE
+   ============================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  const cvBtn     = document.querySelector('.cv-dropdown-btn');
+  const cvModal   = document.getElementById('cvModal');
+  const cvOverlay = document.getElementById('cvOverlay');
+
+  if (!cvBtn || !cvModal || !cvOverlay) return;
+
+  function openCV() {
+    cvModal.classList.add('open');
+    cvOverlay.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+
+  function closeCV() {
+    cvModal.classList.remove('open');
+    cvOverlay.classList.remove('open');
+    document.body.style.overflow = '';
+  }
+
+  // Open on button click
+  cvBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openCV();
+  });
+
+  // Close when clicking the overlay
+  cvOverlay.addEventListener('click', closeCV);
+
+  // Close with Escape key
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') closeCV();
+  });
+
+  // Close after selecting a CV (download starts, modal closes)
+  cvModal.querySelectorAll('a').forEach(link => {
+    link.addEventListener('click', closeCV);
+  });
+});
