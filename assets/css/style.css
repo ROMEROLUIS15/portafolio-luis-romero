@@ -899,14 +899,23 @@ footer {
 }
 .cv-dropdown-btn {
   display: inline-flex; align-items: center; gap: 8px;
-  background: transparent; color: var(--text-primary);
+  background: transparent;
+  color: var(--text-primary);
   padding: 12px 24px; border-radius: 10px;
   font-size: 14px; font-weight: 600;
-  border: 1px solid var(--border); cursor: pointer;
+  border: 1px solid var(--accent-glow);
+  background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-light) 100%);
+  cursor: pointer;
   font-family: 'Inter', sans-serif;
-  transition: border-color 0.2s, background 0.2s;
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 0 12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.06);
 }
-.cv-dropdown-btn:hover { border-color: var(--accent); background: var(--accent-light); }
+.cv-dropdown-btn:hover {
+  border-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg-card) 100%);
+  box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
+  transform: translateY(-1px);
+}
 
 /* Overlay behind modal */
 .cv-overlay {
@@ -970,7 +979,8 @@ footer {
 .cv-dropdown-menu a:active { background: var(--accent); color: #fff; }
 .cv-dropdown-menu a i { font-size: 20px; color: var(--accent); flex-shrink: 0; }
 
-/* Lang toggle labels */
+.cv-dropdown-btn i { color: var(--accent); }
+.cv-dropdown-btn i:first-of-type { color: var(--text-secondary); }
 .lang-current { color: var(--text-muted); font-size: 11px; }
 .lang-sep      { color: var(--accent); font-size: 11px; }
 .lang-target   { color: var(--text-primary); font-size: 12px; font-weight: 700; }
