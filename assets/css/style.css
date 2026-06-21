@@ -50,7 +50,7 @@ body.dark {
   margin: 0; padding: 0;
   box-sizing: border-box;
 }
-html { scroll-behavior: smooth; overflow-x: hidden; }
+html { scroll-behavior: smooth; overflow-x: hidden; scroll-padding-top: 72px; }
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg-primary);

@@ -1,4 +1,11 @@
 /* ============================================
+   FORCE SCROLL TO TOP ON LOAD (no hash)
+   ============================================ */
+if (!window.location.hash) {
+  window.scrollTo(0, 0);
+}
+
+/* ============================================
    NAVIGATION — mobile toggle
    ============================================ */
 function myMenuFunction() {
