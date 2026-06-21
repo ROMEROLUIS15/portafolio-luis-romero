@@ -1,0 +1,13 @@
+# Environment — NEVER commit real secrets
+.env
+.env.local
+.env.*.local
+supabase/functions/chat/.env.local
+
+# Dependencies
+node_modules/
+package-lock.json
+
+# Coverage / build artifacts
+coverage/
+dist/

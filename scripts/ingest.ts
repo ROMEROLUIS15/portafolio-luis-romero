@@ -9,165 +9,189 @@
  * Requirements: 2.1, 2.2, 2.3, 2.4
  */
 
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
 // @ts-ignore — unpdf via esm.sh
 import { extractText } from 'https://esm.sh/unpdf@0.11.0';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
 
-const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
-const SUPABASE_SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
-const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
+type Lang = 'en' | 'es';
 
-if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !SUPABASE_ANON_KEY) {
-  console.error(
-    '[ingest] Missing required env vars: SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_ANON_KEY'
-  );
+interface DocumentRow {
+  content:   string;
+  embedding: number[];
+  metadata:  {
+    source:      string;
+    lang:        string;
+    chunk_index: number;
+    created_at:  string;
+  };
+}
+
+interface IngestResult {
+  ingested: number;
+  errors:   number;
+}
+
+interface SourceConfig {
+  path: string;
+  lang: Lang;
+  type: 'pdf' | 'json';
+}
+
+// ─── Environment (read once, validated at startup) ────────────────────────────
+
+const ENV = {
+  supabaseUrl:        Deno.env.get('SUPABASE_URL')              ?? '',
+  supabaseServiceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
+  supabaseAnonKey:    Deno.env.get('SUPABASE_ANON_KEY')         ?? '',
+} as const;
+
+const MISSING_VARS = Object.entries(ENV)
+  .filter(([, v]) => !v)
+  .map(([k]) => k);
+
+if (MISSING_VARS.length > 0) {
+  console.error(`[ingest] Missing required env vars: ${MISSING_VARS.join(', ')}`);
   Deno.exit(1);
 }
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_KEY);
+// ─── Supabase client (created once) ──────────────────────────────────────────
 
-const CHUNK_MAX_TOKENS = 500;
-const CHUNK_OVERLAP = 50;
-const EMBEDDING_BATCH_SIZE = 20;
-const EMBEDDING_MAX_RETRIES = 3;
+const supabase = createClient(ENV.supabaseUrl, ENV.supabaseServiceKey);
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const CHUNK_MAX_TOKENS   = 500;
+const CHUNK_OVERLAP      = 50;
+const BATCH_SIZE         = 20;
+const EMBED_MAX_RETRIES  = 3;
 const INSERT_MAX_RETRIES = 2;
+
+const PDF_SOURCES: SourceConfig[] = [
+  { path: './assets/images/LuisRomero_AIEngineer-Backend_2026_EN.pdf', lang: 'en', type: 'pdf'  },
+  { path: './assets/images/LuisRomero_AIEngineer-Backend_2026_ES.pdf', lang: 'es', type: 'pdf'  },
+  { path: './cronix-stats.json',                                        lang: 'en', type: 'json' },
+];
 
 // ─── Chunker — Requirement 2.1 ────────────────────────────────────────────────
 
 /**
  * Naive token estimator: ~4 chars per token (GPT-style approximation).
- * Sufficient for chunking purposes without importing a tokenizer.
+ * Sufficient for chunking without importing a full tokenizer in Deno.
  */
-function estimateTokens(text: string): number {
+export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4);
 }
 
 /**
- * Split text into chunks of ~maxTokens with `overlap` token overlap.
- * Requirements: 2.1
+ * Splits text into overlapping chunks of ~maxTokens tokens.
+ * Uses word boundaries to avoid cutting mid-word.
  */
 export function chunkText(
-  text: string,
-  maxTokens = CHUNK_MAX_TOKENS,
-  overlap = CHUNK_OVERLAP
+  text:      string,
+  maxTokens: number = CHUNK_MAX_TOKENS,
+  overlap:   number = CHUNK_OVERLAP
 ): string[] {
-  // Split into words to keep word boundaries
   const words = text.split(/\s+/).filter(Boolean);
+  if (words.length === 0) return [];
+
+  // ~1 token per 1.25 words (avg 5 chars/word, 4 chars/token)
+  const maxWords     = Math.floor(maxTokens / (1 / 1.25));
+  const overlapWords = Math.floor(overlap   / (1 / 1.25));
+
   const chunks: string[] = [];
-
-  // Approximate words per chunk (4 chars/token avg, ~5 chars/word avg)
-  const wordsPerToken = 1 / 1.25; // ~1 token per 1.25 words
-  const maxWords = Math.floor(maxTokens / wordsPerToken);
-  const overlapWords = Math.floor(overlap / wordsPerToken);
-
   let start = 0;
+
   while (start < words.length) {
-    const end = Math.min(start + maxWords, words.length);
-    const chunk = words.slice(start, end).join(' ');
+    const end   = Math.min(start + maxWords, words.length);
+    const chunk = words.slice(start, end).join(' ').trim();
 
-    if (chunk.trim().length > 0) {
-      chunks.push(chunk.trim());
-    }
-
+    if (chunk.length > 0) chunks.push(chunk);
     if (end >= words.length) break;
+
     start = end - overlapWords;
-    if (start <= 0) start = end; // safety: avoid infinite loop
+    if (start <= 0) start = end; // guard against infinite loop
   }
 
   return chunks;
 }
 
-// ─── Embeddings via Supabase (free, gte-small, 384 dims) — Requirements 2.3, 2.4
+// ─── Embeddings — Supabase gte-small (free, 384 dims) ────────────────────────
 
-async function generateEmbeddingBatch(
-  texts: string[]
-): Promise<number[][]> {
-  // Supabase embed function processes one text at a time — batch sequentially
-  const embeddings: number[][] = [];
+async function fetchEmbedding(text: string, attempt = 1): Promise<number[]> {
+  const response = await fetch(`${ENV.supabaseUrl}/functions/v1/embed`, {
+    method:  'POST',
+    headers: {
+      Authorization:  `Bearer ${ENV.supabaseAnonKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ input: text }),
+  });
 
-  for (let i = 0; i < texts.length; i++) {
-    for (let attempt = 1; attempt <= EMBEDDING_MAX_RETRIES; attempt++) {
-      try {
-        const response = await fetch(`${SUPABASE_URL}/functions/v1/embed`, {
-          method: 'POST',
-          headers: {
-            Authorization: `Bearer ${SUPABASE_ANON_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ input: texts[i] }),
-        });
+  if (!response.ok) {
+    const message = `HTTP ${response.status}: ${await response.text()}`;
 
-        if (!response.ok) {
-          throw new Error(`HTTP ${response.status}: ${await response.text()}`);
-        }
-
-        const data = await response.json();
-        embeddings.push(data.embedding as number[]);
-        break;
-      } catch (err) {
-        if (attempt === EMBEDDING_MAX_RETRIES) throw err;
-        const waitMs = Math.pow(2, attempt) * 500;
-        console.warn(
-          `[ingest] Embed attempt ${attempt} failed for chunk ${i}, retrying in ${waitMs}ms...`,
-          (err as Error).message
-        );
-        await new Promise((r) => setTimeout(r, waitMs));
-      }
+    if (attempt < EMBED_MAX_RETRIES) {
+      const waitMs = Math.pow(2, attempt) * 500;
+      console.warn(`[ingest] Embed attempt ${attempt} failed, retrying in ${waitMs}ms — ${message}`);
+      await sleep(waitMs);
+      return fetchEmbedding(text, attempt + 1);
     }
+
+    throw new Error(`Embedding failed after ${EMBED_MAX_RETRIES} attempts: ${message}`);
   }
 
-  return embeddings;
+  const data = await response.json();
+  return data.embedding as number[];
 }
 
-// ─── Supabase upsert — Requirement 2.3, 2.4 ──────────────────────────────────
-
-interface DocumentRow {
-  content: string;
-  embedding: number[];
-  metadata: {
-    source: string;
-    lang: string;
-    chunk_index: number;
-    created_at: string;
-  };
+async function generateEmbeddingBatch(texts: string[]): Promise<number[][]> {
+  // Supabase embed processes one text at a time — run sequentially
+  const results: number[][] = [];
+  for (const text of texts) {
+    results.push(await fetchEmbedding(text));
+  }
+  return results;
 }
 
-async function upsertDocuments(rows: DocumentRow[]): Promise<void> {
-  for (let attempt = 1; attempt <= INSERT_MAX_RETRIES + 1; attempt++) {
-    const { error } = await supabase.from('documents').insert(rows);
-    if (!error) return;
+// ─── Persistence ──────────────────────────────────────────────────────────────
 
-    if (attempt > INSERT_MAX_RETRIES) {
-      throw new Error(`Supabase insert failed after ${INSERT_MAX_RETRIES} retries: ${error.message}`);
-    }
+async function insertRows(rows: DocumentRow[], attempt = 1): Promise<void> {
+  const { error } = await supabase.from('documents').insert(rows);
+
+  if (!error) return;
+
+  if (attempt <= INSERT_MAX_RETRIES) {
     console.warn(`[ingest] Insert attempt ${attempt} failed, retrying...`, error.message);
-    await new Promise((r) => setTimeout(r, 1000 * attempt));
+    await sleep(1000 * attempt);
+    return insertRows(rows, attempt + 1);
   }
+
+  throw new Error(`Insert failed after ${INSERT_MAX_RETRIES} retries: ${error.message}`);
 }
 
-// ─── Process chunks in batches ────────────────────────────────────────────────
+// ─── Pipeline: chunks → embeddings → DB ──────────────────────────────────────
 
-async function processAndIngest(
+async function ingestChunks(
   chunks: string[],
   source: string,
-  lang: string
-): Promise<{ ingested: number; errors: number }> {
-  let ingested = 0;
-  let errors = 0;
-  const now = new Date().toISOString();
+  lang:   Lang
+): Promise<IngestResult> {
+  const now      = new Date().toISOString();
+  let   ingested = 0;
+  let   errors   = 0;
 
-  for (let i = 0; i < chunks.length; i += EMBEDDING_BATCH_SIZE) {
-    const batch = chunks.slice(i, i + EMBEDDING_BATCH_SIZE);
-    const batchIndices = Array.from({ length: batch.length }, (_, k) => i + k);
+  for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
+    const batch        = chunks.slice(i, i + BATCH_SIZE);
+    const batchIndices = batch.map((_, k) => i + k);
 
     let embeddings: number[][];
     try {
       embeddings = await generateEmbeddingBatch(batch);
     } catch (err) {
       console.warn(
-        `[ingest] Skipping batch ${Math.floor(i / EMBEDDING_BATCH_SIZE) + 1} for ${source}:`,
+        `[ingest] Skipping batch starting at chunk ${i} for "${source}":`,
         (err as Error).message
       );
       errors += batch.length;
@@ -177,43 +201,28 @@ async function processAndIngest(
     const rows: DocumentRow[] = batch.map((content, k) => ({
       content,
       embedding: embeddings[k],
-      metadata: {
-        source,
-        lang,
-        chunk_index: batchIndices[k],
-        created_at: now,
-      },
+      metadata:  { source, lang, chunk_index: batchIndices[k], created_at: now },
     }));
 
-    try {
-      await upsertDocuments(rows);
-      ingested += rows.length;
-      console.log(
-        `[ingest] ✓ Ingested ${ingested}/${chunks.length} chunks for ${source}`
-      );
-    } catch (err) {
-      console.error(
-        `[ingest] ✗ Insert failed for batch ${Math.floor(i / EMBEDDING_BATCH_SIZE) + 1}:`,
-        (err as Error).message
-      );
-      errors += rows.length;
-      throw err; // abort on insert failure per requirements
-    }
+    // insertRows throws on exhausted retries — let it propagate to abort the run
+    await insertRows(rows);
+    ingested += rows.length;
+    console.log(`[ingest] ✓ ${source}: ${ingested}/${chunks.length} chunks ingested`);
   }
 
   return { ingested, errors };
 }
 
-// ─── PDF source processing — Requirement 2.1 ─────────────────────────────────
+// ─── Source processors ────────────────────────────────────────────────────────
 
-async function processPDF(filePath: string, lang: string): Promise<void> {
+async function processPDF(filePath: string, lang: Lang): Promise<void> {
   console.log(`\n[ingest] Processing PDF: ${filePath} (lang=${lang})`);
 
   let pdfBytes: Uint8Array;
   try {
     pdfBytes = await Deno.readFile(filePath);
   } catch {
-    // Requirement 2.4: log error and continue with other files
+    // Requirement 2.4: log and continue — do not abort the whole run
     console.error(`[ingest] ✗ File not found: ${filePath} — skipping`);
     return;
   }
@@ -227,23 +236,21 @@ async function processPDF(filePath: string, lang: string): Promise<void> {
     return;
   }
 
-  if (!text || text.trim().length === 0) {
+  if (!text?.trim()) {
     console.warn(`[ingest] ⚠ No text extracted from ${filePath}`);
     return;
   }
 
   const source = filePath.split('/').pop() ?? filePath;
   const chunks = chunkText(text);
-  console.log(`[ingest] Created ${chunks.length} chunks from ${source}`);
+  console.log(`[ingest] Created ${chunks.length} chunks from "${source}"`);
 
-  const { ingested, errors } = await processAndIngest(chunks, source, lang);
-  console.log(`[ingest] ${source}: ingested=${ingested}, errors=${errors}`);
+  const { ingested, errors } = await ingestChunks(chunks, source, lang);
+  console.log(`[ingest] "${source}" done — ingested=${ingested}, errors=${errors}`);
 }
 
-// ─── cronix-stats.json processing — Requirement 2.2 ─────────────────────────
-
 async function processCronixStats(filePath: string): Promise<void> {
-  console.log(`\n[ingest] Processing cronix-stats.json`);
+  console.log(`\n[ingest] Processing: ${filePath}`);
 
   let raw: string;
   try {
@@ -257,65 +264,57 @@ async function processCronixStats(filePath: string): Promise<void> {
   try {
     stats = JSON.parse(raw);
   } catch (err) {
-    console.error(`[ingest] ✗ Failed to parse cronix-stats.json:`, (err as Error).message);
+    console.error(`[ingest] ✗ Failed to parse ${filePath}:`, (err as Error).message);
     return;
   }
 
-  // Serialize each scalar field and changelog entry as readable text chunks
-  const textParts: string[] = [];
+  const lines: string[] = [];
 
   for (const [key, value] of Object.entries(stats)) {
     if (key === 'changelog' && Array.isArray(value)) {
       for (const entry of value) {
-        if (typeof entry === 'object' && entry !== null) {
-          const entryText = Object.entries(entry)
+        if (entry !== null && typeof entry === 'object') {
+          const line = Object.entries(entry as Record<string, unknown>)
             .map(([k, v]) => `${k}: ${v}`)
             .join(', ');
-          textParts.push(`Cronix changelog entry — ${entryText}`);
+          lines.push(`Cronix changelog entry — ${line}`);
         }
       }
-    } else if (typeof value !== 'object') {
-      textParts.push(`Cronix ${key}: ${value}`);
-    } else if (value !== null) {
-      textParts.push(`Cronix ${key}: ${JSON.stringify(value)}`);
+    } else {
+      const serialized = typeof value === 'object' ? JSON.stringify(value) : String(value);
+      lines.push(`Cronix ${key}: ${serialized}`);
     }
   }
 
-  // Join into one text blob and chunk
-  const fullText = textParts.join('\n');
-  const source = 'cronix-stats.json';
-  const chunks = chunkText(fullText);
-  console.log(`[ingest] Created ${chunks.length} chunks from ${source}`);
+  const chunks = chunkText(lines.join('\n'));
+  console.log(`[ingest] Created ${chunks.length} chunks from "cronix-stats.json"`);
 
-  const { ingested, errors } = await processAndIngest(chunks, source, 'en');
-  console.log(`[ingest] ${source}: ingested=${ingested}, errors=${errors}`);
+  const { ingested, errors } = await ingestChunks(chunks, 'cronix-stats.json', 'en');
+  console.log(`[ingest] "cronix-stats.json" done — ingested=${ingested}, errors=${errors}`);
 }
 
-// ─── Main ─────────────────────────────────────────────────────────────────────
+// ─── Utility ──────────────────────────────────────────────────────────────────
 
-console.log('[ingest] Starting portfolio knowledge base ingestion...\n');
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
 
-const pdfBase = './assets/images';
-const sources: Array<{ path: string; lang: string; type: 'pdf' | 'json' }> = [
-  {
-    path: `${pdfBase}/LuisRomero_AIEngineer-Backend_2026_EN.pdf`,
-    lang: 'en',
-    type: 'pdf',
-  },
-  {
-    path: `${pdfBase}/LuisRomero_AIEngineer-Backend_2026_ES.pdf`,
-    lang: 'es',
-    type: 'pdf',
-  },
-  { path: './cronix-stats.json', lang: 'en', type: 'json' },
-];
+// ─── Main (only runs when executed directly, not when imported) ───────────────
 
-for (const src of sources) {
-  if (src.type === 'pdf') {
-    await processPDF(src.path, src.lang);
-  } else {
-    await processCronixStats(src.path);
+async function main(): Promise<void> {
+  console.log('[ingest] Starting portfolio knowledge base ingestion...\n');
+
+  for (const src of PDF_SOURCES) {
+    if (src.type === 'pdf') {
+      await processPDF(src.path, src.lang);
+    } else {
+      await processCronixStats(src.path);
+    }
   }
+
+  console.log('\n[ingest] ✓ Ingestion complete.');
 }
 
-console.log('\n[ingest] ✓ Ingestion complete.');
+if (import.meta.main) {
+  await main();
+}
