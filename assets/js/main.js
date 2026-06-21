@@ -2,7 +2,12 @@
    FORCE SCROLL TO TOP ON LOAD (no hash)
    ============================================ */
 if (!window.location.hash) {
+  // Use both — immediate and after DOM ready to beat browser scroll restoration
   window.scrollTo(0, 0);
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  window.addEventListener('load', () => window.scrollTo(0, 0));
 }
 
 /* ============================================
