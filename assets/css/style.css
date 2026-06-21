@@ -50,7 +50,7 @@ body.dark {
   margin: 0; padding: 0;
   box-sizing: border-box;
 }
-html { scroll-behavior: smooth; }
+html { scroll-behavior: smooth; overflow-x: hidden; }
 body {
   font-family: 'Inter', sans-serif;
   background: var(--bg-primary);
@@ -158,11 +158,12 @@ nav.scrolled {
   background: var(--bg-card);
   cursor: pointer;
   transition: background 0.2s, border-color 0.2s;
+  flex-shrink: 0;
 }
 .dark-toggle:hover { border-color: var(--accent); background: var(--accent-light); }
 .dark-toggle i { font-size: 16px; color: var(--text-primary); }
 
-/* Lang toggle */
+/* Nav lang toggle */
 .lang-toggle {
   display: flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 600;
@@ -173,6 +174,8 @@ nav.scrolled {
   cursor: pointer;
   color: var(--text-secondary);
   transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
 }
 .lang-toggle:hover { border-color: var(--accent); color: var(--accent); }
 
@@ -701,6 +704,22 @@ footer {
    RESPONSIVE
    ============================================ */
 /* ============================================
+   RESPONSIVE — 768px (tablets portrait / large phones landscape)
+   ============================================ */
+@media (max-width: 768px) {
+  /* Form */
+  .form-row { grid-template-columns: 1fr; }
+
+  /* Timeline less padding */
+  .timeline-content { padding: 16px; }
+  .timeline-tags { gap: 4px; }
+
+  /* Nav: collapse at this size too for Spanish (longer words) */
+  .lang-toggle .lang-current,
+  .lang-toggle .lang-sep { display: none; }
+}
+
+/* ============================================
    RESPONSIVE — 1280px
    ============================================ */
 @media (max-width: 1280px) {
@@ -741,17 +760,18 @@ footer {
 @media (max-width: 900px) {
   /* Nav */
   .nav-menu {
-    position: fixed; top: 60px; left: 0; right: 0;
+    position: fixed; top: 72px; left: 0; right: 0;
     flex-direction: column;
     background: var(--nav-bg);
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     padding: 20px;
     transform: translateY(-120%);
-    transition: transform 0.3s;
+    transition: transform 0.3s, top 0.3s;
     border-bottom: 1px solid var(--border);
     z-index: 999;
   }
+  .nav-menu.nav-scrolled { top: 60px; }
   .nav-menu.responsive { transform: translateY(0); }
   .nav_menu_list { flex-direction: column; gap: 4px; width: 100%; }
   .nav-link { display: block; padding: 10px 16px; }
@@ -954,6 +974,32 @@ footer {
 .lang-current { color: var(--text-muted); font-size: 11px; }
 .lang-sep      { color: var(--accent); font-size: 11px; }
 .lang-target   { color: var(--text-primary); font-size: 12px; font-weight: 700; }
+
+/* ============================================
+   RESPONSIVE — 400px (very small phones)
+   ============================================ */
+@media (max-width: 400px) {
+  .wrapper { padding-inline: 14px; }
+  nav { padding-inline: 14px; }
+
+  /* Show only icon on lang toggle */
+  .lang-toggle .lang-current,
+  .lang-toggle .lang-sep,
+  .lang-toggle .lang-target { display: none; }
+  .lang-toggle { padding: 6px 10px; }
+
+  .hero-title { font-size: 26px; }
+  .stat-number { font-size: 20px; }
+  .hero-stats { gap: 12px; }
+
+  .section-title { font-size: 22px; }
+
+  .metric-value { font-size: 20px; }
+  .metric-card { padding: 12px; }
+  .metrics-grid { gap: 8px; }
+
+  footer { padding: 24px 14px; }
+}
 
 /* ============================================
    PROJECT IMAGE PLACEHOLDER (no screenshot)

@@ -34,30 +34,150 @@
     const grid = document.getElementById('metricsGrid');
     if (!grid) return;
 
+    // Technical metrics first (what impresses engineers/recruiters)
+    // Business context as supporting sub-labels
     const items = isSpanish ? [
-      { icon: 'uil uil-calendar-alt', value: stats.appointments_total, suffix: '+', label: 'Citas gestionadas', sub: `+${stats.appointments_this_month} este mes` },
-      { icon: 'uil uil-users-alt',    value: stats.active_tenants,      suffix: '',  label: 'Negocios activos', sub: 'multi-tenant' },
-      { icon: 'uil uil-check-circle', value: stats.tests_total,         suffix: '+', label: 'Tests escritos', sub: 'Vitest · Playwright · pgTAP' },
-      { icon: 'uil uil-shield-check', value: stats.rls_policies,        suffix: '',  label: 'Políticas RLS', sub: `${stats.rls_tables} tablas aisladas` },
-      { icon: 'uil uil-bolt',         value: stats.edge_functions,       suffix: '',  label: 'Edge Functions', sub: 'Deno serverless' },
-      { icon: 'uil uil-brain',        value: stats.anti_hallucination_layers, suffix: '', label: 'Capas anti-alucinación', sub: `~${stats.anti_hallucination_mechanisms} mecanismos` },
-      { icon: 'uil uil-server',       value: stats.uptime_pct,           suffix: '%', label: 'Uptime', sub: 'producción 24/7' },
-      { icon: 'uil uil-history',      value: stats.ci_checks,            suffix: '',  label: 'Asserts pgTAP en CI', sub: 'RLS validada' },
+      {
+        icon: 'uil uil-check-circle',
+        value: stats.tests_total,
+        suffix: '+',
+        label: 'Tests escritos',
+        sub: 'Vitest · Playwright · pgTAP',
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-shield-check',
+        value: stats.rls_policies,
+        suffix: '',
+        label: 'Políticas RLS',
+        sub: `${stats.rls_tables} tablas · aislamiento total`,
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-brain',
+        value: stats.anti_hallucination_layers,
+        suffix: '',
+        label: 'Capas anti-alucinación',
+        sub: `~${stats.anti_hallucination_mechanisms} mecanismos`,
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-history',
+        value: stats.ci_checks,
+        suffix: '',
+        label: 'Asserts pgTAP en CI',
+        sub: 'RLS validada automáticamente',
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-bolt',
+        value: stats.edge_functions,
+        suffix: '',
+        label: 'Edge Functions',
+        sub: 'Deno · latencia global mínima',
+        highlight: false,
+      },
+      {
+        icon: 'uil uil-server',
+        value: stats.uptime_pct,
+        suffix: '%',
+        label: 'Uptime',
+        sub: 'producción 24/7 sin intervención',
+        highlight: false,
+      },
+      {
+        icon: 'uil uil-calendar-alt',
+        value: stats.appointments_total,
+        suffix: '+',
+        label: 'Citas gestionadas',
+        sub: 'cero intervención manual · 24/7',
+        highlight: false,
+        staticVal: null,
+      },
+      {
+        icon: 'uil uil-robot',
+        value: null,
+        suffix: '',
+        label: 'Sin humano en el flujo',
+        sub: 'WhatsApp + voz · agenda, reagenda, cancela',
+        highlight: false,
+        staticVal: '24/7',
+      },
     ] : [
-      { icon: 'uil uil-calendar-alt', value: stats.appointments_total, suffix: '+', label: 'Appointments managed', sub: `+${stats.appointments_this_month} this month` },
-      { icon: 'uil uil-users-alt',    value: stats.active_tenants,      suffix: '',  label: 'Active tenants', sub: 'multi-tenant SaaS' },
-      { icon: 'uil uil-check-circle', value: stats.tests_total,         suffix: '+', label: 'Tests written', sub: 'Vitest · Playwright · pgTAP' },
-      { icon: 'uil uil-shield-check', value: stats.rls_policies,        suffix: '',  label: 'RLS Policies', sub: `${stats.rls_tables} isolated tables` },
-      { icon: 'uil uil-bolt',         value: stats.edge_functions,       suffix: '',  label: 'Edge Functions', sub: 'Deno serverless' },
-      { icon: 'uil uil-brain',        value: stats.anti_hallucination_layers, suffix: '', label: 'Anti-hallucination layers', sub: `~${stats.anti_hallucination_mechanisms} mechanisms` },
-      { icon: 'uil uil-server',       value: stats.uptime_pct,           suffix: '%', label: 'Uptime', sub: '24/7 production' },
-      { icon: 'uil uil-history',      value: stats.ci_checks,            suffix: '',  label: 'pgTAP asserts in CI', sub: 'RLS validated' },
+      {
+        icon: 'uil uil-check-circle',
+        value: stats.tests_total,
+        suffix: '+',
+        label: 'Tests written',
+        sub: 'Vitest · Playwright · pgTAP',
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-shield-check',
+        value: stats.rls_policies,
+        suffix: '',
+        label: 'RLS Policies',
+        sub: `${stats.rls_tables} tables · total tenant isolation`,
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-brain',
+        value: stats.anti_hallucination_layers,
+        suffix: '',
+        label: 'Anti-hallucination layers',
+        sub: `~${stats.anti_hallucination_mechanisms} mechanisms`,
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-history',
+        value: stats.ci_checks,
+        suffix: '',
+        label: 'pgTAP asserts in CI',
+        sub: 'RLS validated automatically',
+        highlight: true,
+      },
+      {
+        icon: 'uil uil-bolt',
+        value: stats.edge_functions,
+        suffix: '',
+        label: 'Edge Functions',
+        sub: 'Deno · global low latency',
+        highlight: false,
+      },
+      {
+        icon: 'uil uil-server',
+        value: stats.uptime_pct,
+        suffix: '%',
+        label: 'Uptime',
+        sub: '24/7 production · no manual intervention',
+        highlight: false,
+      },
+      {
+        icon: 'uil uil-calendar-alt',
+        value: stats.appointments_total,
+        suffix: '+',
+        label: 'Appointments managed',
+        sub: 'zero manual intervention · 24/7',
+        highlight: false,
+        staticVal: null,
+      },
+      {
+        icon: 'uil uil-robot',
+        value: null,
+        suffix: '',
+        label: 'No human in the loop',
+        sub: 'WhatsApp + voice · books, reschedules, cancels',
+        highlight: false,
+        staticVal: '24/7',
+      },
     ];
 
     grid.innerHTML = items.map(item => `
-      <div class="metric-card reveal">
+      <div class="metric-card reveal${item.highlight ? ' metric-card--hi' : ''}">
         <i class="${item.icon} metric-icon"></i>
-        <span class="metric-value" data-target="${item.value}" data-suffix="${item.suffix}">0${item.suffix}</span>
+        <span class="metric-value${item.staticVal ? ' static' : ''}"${item.staticVal ? '' : ` data-target="${item.value}" data-suffix="${item.suffix}"`}>
+          ${item.staticVal ? item.staticVal : `0${item.suffix}`}
+        </span>
         <span class="metric-label">${item.label}</span>
         <span class="metric-sub">${item.sub}</span>
       </div>
