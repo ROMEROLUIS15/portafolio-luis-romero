@@ -356,8 +356,8 @@
       case 'exit':
         printLines(c.exit);
         setTimeout(() => {
-          const section = document.getElementById('terminal');
-          if (section) section.style.display = 'none';
+          const contact = document.getElementById('contact');
+          if (contact) contact.scrollIntoView({ behavior: 'smooth' });
         }, 1200);
         break;
       case 'open':
