@@ -12,17 +12,17 @@
   "ci_checks": 138,
   "version": "0.1.0",
   "last_updated": "2026-06-20T21:13:01Z",
-  "last_commit_msg": "Pipeline activo - portafolio conectado a Cronix",
+  "last_commit_msg": "v0.1.0 — production release",
   "changelog": [
     {
       "date": "2026-06-20",
       "type": "feat",
-      "msg": "Pipeline activo - portafolio conectado a Cronix"
+      "msg": "v0.1.0 — production release, 251 appointments managed autonomously"
     },
     {
       "date": "2026-06-20",
       "type": "feat",
-      "msg": "Production release - 251 appointments managed autonomously"
+      "msg": "Anti-hallucination architecture - 6 layers, ~13 mechanisms deployed"
     }
   ]
 }
