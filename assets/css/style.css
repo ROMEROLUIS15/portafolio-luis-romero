@@ -899,23 +899,23 @@ footer {
 }
 .cv-dropdown-btn {
   display: inline-flex; align-items: center; gap: 8px;
-  background: transparent;
+  background: var(--accent-light);
   color: var(--text-primary);
   padding: 12px 24px; border-radius: 10px;
   font-size: 14px; font-weight: 600;
-  border: 1px solid var(--accent-glow);
-  background: linear-gradient(135deg, var(--bg-card) 0%, var(--accent-light) 100%);
+  border: 1.5px solid var(--accent);
   cursor: pointer;
   font-family: 'Inter', sans-serif;
-  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.2s;
-  box-shadow: 0 0 12px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.06);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.2s;
+  box-shadow: 0 0 10px var(--accent-glow);
 }
 .cv-dropdown-btn:hover {
-  border-color: var(--accent);
-  background: linear-gradient(135deg, var(--accent-light) 0%, var(--bg-card) 100%);
-  box-shadow: 0 0 20px var(--accent-glow), inset 0 1px 0 rgba(255,255,255,0.08);
+  background: var(--accent);
+  color: #fff;
+  box-shadow: 0 0 20px var(--accent-glow);
   transform: translateY(-1px);
 }
+.cv-dropdown-btn:hover i { color: #fff; }
 
 /* Overlay behind modal */
 .cv-overlay {
