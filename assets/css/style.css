@@ -977,7 +977,7 @@ footer {
 .cv-dropdown-menu a:not(:last-child) { border-bottom: 1px solid var(--border); }
 .cv-dropdown-menu a:hover  { background: var(--accent-light); color: var(--accent); }
 .cv-dropdown-menu a:active { background: var(--accent); color: #fff; }
-.cv-dropdown-menu a i { font-size: 20px; color: var(--accent); flex-shrink: 0; }
+.cv-dropdown-menu a i { font-size: 20px; color: #fff; flex-shrink: 0; }
 
 .cv-dropdown-btn i { color: var(--accent); }
 .cv-dropdown-btn i:first-of-type { color: var(--text-secondary); }
