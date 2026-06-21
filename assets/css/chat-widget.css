@@ -1,0 +1,490 @@
+/* ============================================
+   CHAT WIDGET — Portfolio Conversational Agent
+   Uses CSS variables from style.css
+   Requirements: 1.1, 1.2, 1.5
+   ============================================ */
+
+/* ─── Bubble Button ─────────────────────────────────────────────────────────── */
+
+.cw-bubble {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 10000;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 20px var(--accent-glow), 0 2px 8px rgba(0, 0, 0, 0.3);
+  transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  outline: none;
+  /* Ensure it sits above back-to-top button */
+}
+
+.cw-bubble:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow: 0 6px 28px var(--accent-glow), 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.cw-bubble:active {
+  transform: scale(0.96);
+}
+
+.cw-bubble-icon {
+  width: 26px;
+  height: 26px;
+  color: #fff;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  position: absolute;
+}
+
+.cw-bubble-icon--chat { opacity: 1; transform: scale(1) rotate(0deg); }
+.cw-bubble-icon--close { opacity: 0; transform: scale(0.6) rotate(-90deg); }
+
+.cw-bubble.is-open .cw-bubble-icon--chat {
+  opacity: 0;
+  transform: scale(0.6) rotate(90deg);
+}
+.cw-bubble.is-open .cw-bubble-icon--close {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* Notification dot */
+.cw-bubble-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 10px;
+  height: 10px;
+  background: #22c55e;
+  border-radius: 50%;
+  border: 2px solid var(--bg-primary, #0e0e0e);
+  animation: cwBlink 2s ease-in-out infinite;
+}
+
+@keyframes cwBlink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.35; }
+}
+
+/* ─── Chat Panel ────────────────────────────────────────────────────────────── */
+
+.cw-panel {
+  position: fixed;
+  bottom: 92px;
+  right: 24px;
+  z-index: 9999;
+  width: 380px;
+  max-width: calc(100vw - 48px);
+  min-height: 480px;
+  max-height: calc(100vh - 120px);
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+
+  /* Animation */
+  opacity: 0;
+  transform: translateY(16px) scale(0.97);
+  pointer-events: none;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  transform-origin: bottom right;
+}
+
+.cw-panel.is-open {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+/* Panel header */
+.cw-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 18px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.cw-header-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--accent-light);
+  border: 2px solid var(--accent-glow);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cw-header-avatar svg {
+  width: 18px;
+  height: 18px;
+  color: var(--accent);
+}
+
+.cw-header-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cw-header-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  line-height: 1.2;
+}
+
+.cw-header-status {
+  font-size: 11px;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.cw-header-status::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #22c55e;
+  flex-shrink: 0;
+}
+
+.cw-close-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s, background 0.2s;
+  flex-shrink: 0;
+}
+
+.cw-close-btn:hover {
+  color: var(--text-primary);
+  background: var(--accent-light);
+}
+
+.cw-close-btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+/* ─── Messages Area ──────────────────────────────────────────────────────────── */
+
+.cw-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  scroll-behavior: smooth;
+}
+
+/* Custom scrollbar */
+.cw-messages::-webkit-scrollbar { width: 4px; }
+.cw-messages::-webkit-scrollbar-track { background: transparent; }
+.cw-messages::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+/* Message bubble */
+.cw-msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 88%;
+  animation: cwMsgIn 0.2s ease forwards;
+}
+
+@keyframes cwMsgIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.cw-msg--user {
+  align-self: flex-end;
+  align-items: flex-end;
+}
+
+.cw-msg--assistant {
+  align-self: flex-start;
+  align-items: flex-start;
+}
+
+.cw-msg--error {
+  align-self: stretch;
+  max-width: 100%;
+  align-items: stretch;
+}
+
+.cw-msg-bubble {
+  padding: 10px 14px;
+  border-radius: 16px;
+  font-size: 13.5px;
+  line-height: 1.55;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.cw-msg--user .cw-msg-bubble {
+  background: var(--accent);
+  color: #fff;
+  border-bottom-right-radius: 4px;
+}
+
+.cw-msg--assistant .cw-msg-bubble {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-bottom-left-radius: 4px;
+}
+
+.cw-msg--error .cw-msg-bubble {
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.cw-msg-time {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 4px;
+  padding: 0 2px;
+}
+
+/* Sources */
+.cw-msg-sources {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.cw-source-chip {
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 100px;
+  background: var(--accent-light);
+  color: var(--accent);
+  border: 1px solid var(--accent-glow);
+  font-weight: 500;
+}
+
+/* ─── Typing Indicator ───────────────────────────────────────────────────────── */
+
+.cw-typing {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 14px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  border-bottom-left-radius: 4px;
+  width: fit-content;
+}
+
+.cw-typing span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  animation: cwTypingDot 1.2s ease-in-out infinite;
+}
+
+.cw-typing span:nth-child(2) { animation-delay: 0.2s; }
+.cw-typing span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes cwTypingDot {
+  0%, 60%, 100% { transform: translateY(0); opacity: 0.5; }
+  30%           { transform: translateY(-5px); opacity: 1; }
+}
+
+/* ─── Suggested Questions ────────────────────────────────────────────────────── */
+
+.cw-suggestions {
+  padding: 0 16px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex-shrink: 0;
+}
+
+.cw-suggestion-label {
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 2px;
+}
+
+.cw-suggestion-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-align: left;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s, color 0.2s;
+  font-family: 'Inter', sans-serif;
+  line-height: 1.4;
+}
+
+.cw-suggestion-btn::before {
+  content: '→';
+  color: var(--accent);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.cw-suggestion-btn:hover {
+  border-color: var(--accent);
+  background: var(--accent-light);
+  color: var(--text-primary);
+}
+
+/* ─── Input Area ────────────────────────────────────────────────────────────── */
+
+.cw-input-area {
+  padding: 12px 14px;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 8px;
+  align-items: flex-end;
+  flex-shrink: 0;
+  background: var(--bg-card);
+}
+
+.cw-input {
+  flex: 1;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 13.5px;
+  color: var(--text-primary);
+  font-family: 'Inter', sans-serif;
+  resize: none;
+  outline: none;
+  min-height: 42px;
+  max-height: 120px;
+  line-height: 1.45;
+  transition: border-color 0.2s;
+  overflow-y: auto;
+}
+
+.cw-input:focus {
+  border-color: var(--accent);
+}
+
+.cw-input::placeholder {
+  color: var(--text-muted);
+}
+
+.cw-input:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.cw-send-btn {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 11px;
+  background: var(--accent);
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s, box-shadow 0.15s, background 0.15s;
+  box-shadow: 0 2px 10px var(--accent-glow);
+}
+
+.cw-send-btn:hover:not(:disabled) {
+  transform: scale(1.05);
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.cw-send-btn:active:not(:disabled) {
+  transform: scale(0.95);
+}
+
+.cw-send-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.cw-send-btn svg {
+  width: 18px;
+  height: 18px;
+  color: #fff;
+}
+
+/* ─── Rate Limit Countdown ───────────────────────────────────────────────────── */
+
+.cw-rate-limit-bar {
+  padding: 8px 14px;
+  background: rgba(234, 179, 8, 0.08);
+  border-top: 1px solid rgba(234, 179, 8, 0.2);
+  font-size: 12px;
+  color: #eab308;
+  text-align: center;
+  display: none;
+  flex-shrink: 0;
+}
+
+.cw-rate-limit-bar.is-visible {
+  display: block;
+}
+
+/* ─── Mobile ────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 480px) {
+  .cw-panel {
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 20px 20px 0 0;
+    max-height: 85vh;
+    min-height: 60vh;
+  }
+
+  .cw-bubble {
+    bottom: 16px;
+    right: 16px;
+  }
+}

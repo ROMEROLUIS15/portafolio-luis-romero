@@ -15,6 +15,7 @@
   <link rel="stylesheet" href="assets/css/terminal.css">
   <link rel="stylesheet" href="assets/css/casestudy.css">
   <link rel="stylesheet" href="assets/css/cronix-live.css">
+  <link rel="stylesheet" href="assets/css/chat-widget.css">
 
   <!-- Favicon -->
   <link rel="icon" type="image/jpeg" href="./assets/images/logo rl.jpeg">
@@ -762,5 +763,11 @@
 <script src="assets/js/terminal.js"></script>
 <script src="assets/js/casestudy.js"></script>
 <script src="assets/js/cronix-live.js"></script>
+<!-- Chat Widget — Portfolio Conversational Agent -->
+<script>
+  // Inject endpoint before loading the widget
+  window.__CHAT_ENDPOINT__ = 'https://YOUR_SUPABASE_PROJECT.supabase.co/functions/v1/chat';
+</script>
+<script src="assets/js/chat-widget.js" defer></script>
 </body>
 </html>

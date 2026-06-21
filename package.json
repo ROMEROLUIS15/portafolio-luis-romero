@@ -3,5 +3,18 @@
   "version": "1.0.0",
   "engines": {
     "node": "24.x"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "ingest": "deno run --allow-read --allow-net --allow-env scripts/ingest.ts",
+    "deploy:chat": "supabase functions deploy chat --project-ref YOUR_PROJECT_REF",
+    "db:migrate": "supabase db push --project-ref YOUR_PROJECT_REF"
+  },
+  "devDependencies": {
+    "vitest": "^1.6.0",
+    "fast-check": "^3.20.0",
+    "jsdom": "^24.1.0",
+    "@vitest/coverage-v8": "^1.6.0"
   }
 }
