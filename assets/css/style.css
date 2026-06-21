@@ -590,6 +590,13 @@ nav.scrolled {
   transition: color 0.2s, border-color 0.2s, background 0.2s;
 }
 .project-links a:hover { color: var(--accent); border-color: var(--accent); background: var(--accent-light); }
+.project-links a.btn-live {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+  box-shadow: 0 2px 10px var(--accent-glow);
+}
+.project-links a.btn-live:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
 
 /* ============================================
    CONTACT SECTION
