@@ -208,16 +208,18 @@ portafolio_lerh/
 
 ### Agente conversacional
 
+> **Sin frameworks de orquestación de IA.** El pipeline RAG completo está implementado desde cero: sin LangChain, sin LangGraph, sin LlamaIndex. Solo SDKs oficiales y `fetch` nativo de Deno llamando directamente a las APIs. Mismo patrón que Cronix.
+
 | Capa | Tecnología |
 |------|-----------|
-| Widget frontend | Vanilla JS IIFE (zero dependencies) |
-| Edge Function | Deno / TypeScript (Supabase) |
-| Embeddings | Supabase gte-small — 384 dims (**gratis**) |
+| Widget frontend | Vanilla JS IIFE — zero dependencies |
+| Edge Function | Deno / TypeScript (Supabase) — pipeline RAG custom |
+| Embeddings | Supabase `gte-small` — 384 dims (**gratis**) via `fetch` |
 | Vector DB | PostgreSQL + pgvector, índice HNSW |
-| LLM | Groq `llama3-70b-8192` — temp 0.3 (**gratis**) |
+| LLM | Groq `llama3-70b-8192` — temp 0.3, via `fetch` (**gratis**) |
 | Rate limiting | PostgreSQL `rate_limits` — ventana deslizante 60s |
 | Logging | PostgreSQL `chat_logs` — SHA-256, RLS |
-| Ingesta | Deno script, `unpdf`, chunks 500 tokens |
+| Ingesta | Deno script — `unpdf` + `@supabase/supabase-js` |
 
 ### Automatización
 
