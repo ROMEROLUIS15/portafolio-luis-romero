@@ -67,9 +67,18 @@
 
   // ─── Session token ─────────────────────────────────────────────────────────
 
+  const UUID_V4_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
   function generateUUIDv4() {
+    // Prefer the native generator — always RFC-4122 compliant
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+      return crypto.randomUUID();
+    }
+    // Fallback: variant nibble must be 8, 9, a or b → mask with 0x3 then set bit 3
     return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = (crypto.getRandomValues(new Uint8Array(1))[0] & 0x0f) | (c === 'x' ? 0 : 0x08);
+      const rand = crypto.getRandomValues(new Uint8Array(1))[0];
+      const r = c === 'x' ? rand & 0x0f : (rand & 0x3) | 0x8;
       return r.toString(16);
     });
   }
@@ -77,7 +86,9 @@
   function getOrCreateSessionToken() {
     const key    = 'cw_session_token';
     const stored = sessionStorage.getItem(key);
-    if (stored) return stored;
+    // Reuse only if the cached token is a valid v4 — heal sessions that
+    // received a malformed token from the previous generator
+    if (stored && UUID_V4_RE.test(stored)) return stored;
     const token = generateUUIDv4();
     sessionStorage.setItem(key, token);
     return token;
