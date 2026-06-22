@@ -1,7 +1,11 @@
 /**
  * Ingestion script — Portfolio Conversational Agent
- * Processes PDFs and cronix-stats.json → generates embeddings → upserts into Supabase pgvector
+ * Processes the curated CV markdown + cronix-stats.json → embeddings → Supabase pgvector
  * Embeddings: Supabase built-in gte-small (384 dims, FREE — no OpenAI key needed)
+ *
+ * The CV source is the hand-curated `LuisRomero_CV_ATS_{EN,ES}.md` (clean, already
+ * categorized, no duplicates), NOT the PDF — PDF text extraction produced noisy,
+ * duplicated chunks and was out of date (it still said 150 appointments vs 250+).
  *
  * Usage:
  *   deno run --allow-read --allow-net --allow-env scripts/ingest.ts
@@ -10,8 +14,6 @@
  */
 
 import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2';
-// @ts-ignore — unpdf via esm.sh
-import { extractText } from 'https://esm.sh/unpdf@0.11.0';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -36,7 +38,7 @@ interface IngestResult {
 interface SourceConfig {
   path: string;
   lang: Lang;
-  type: 'pdf' | 'json';
+  type: 'markdown' | 'json';
 }
 
 // ─── Environment (read once, validated at startup) ────────────────────────────
@@ -68,10 +70,10 @@ const BATCH_SIZE         = 20;
 const EMBED_MAX_RETRIES  = 3;
 const INSERT_MAX_RETRIES = 2;
 
-const PDF_SOURCES: SourceConfig[] = [
-  { path: './assets/images/LuisRomero_AIEngineer-Backend_2026_EN.pdf', lang: 'en', type: 'pdf'  },
-  { path: './assets/images/LuisRomero_AIEngineer-Backend_2026_ES.pdf', lang: 'es', type: 'pdf'  },
-  { path: './cronix-stats.json',                                        lang: 'en', type: 'json' },
+const SOURCES: SourceConfig[] = [
+  { path: './LuisRomero_CV_ATS_EN.md', lang: 'en', type: 'markdown' },
+  { path: './LuisRomero_CV_ATS_ES.md', lang: 'es', type: 'markdown' },
+  { path: './cronix-stats.json',       lang: 'en', type: 'json'     },
 ];
 
 // ─── Chunker — Requirement 2.1 ────────────────────────────────────────────────
@@ -115,6 +117,58 @@ export function chunkText(
     if (start <= 0) start = end; // guard against infinite loop
   }
 
+  return chunks;
+}
+
+/**
+ * Section-aware chunker for the curated CV markdown. Splits on `#`/`##`/`###`
+ * headers so each job, project, and the (already-categorized) skills block stays
+ * intact in a single chunk — which keeps tech lists complete and duplicate-free.
+ * Sections longer than the token budget fall back to the word chunker, re-prefixing
+ * the header so each piece keeps its context. Header-only fragments are dropped.
+ */
+// Synthetic lead-in prepended to the skills chunk so its embedding scores high on
+// generic "what technologies / languages / stack does he know?" queries — otherwise
+// a single skills blob loses retrieval to short bullets that echo a few of the words.
+const SKILLS_LEAD: Record<Lang, string> = {
+  es: 'Tecnologías, lenguajes de programación, frameworks, stack técnico y herramientas que domina Luis Romero:',
+  en: "Technologies, programming languages, frameworks, technical stack and tools Luis Romero knows:",
+};
+
+export function chunkMarkdown(text: string, lang: Lang): string[] {
+  const blocks = text
+    .split(/\n(?=#{1,3} )/)
+    .map((b) => b.trim())
+    .filter(Boolean);
+
+  const chunks: string[] = [];
+  for (const block of blocks) {
+    const lines      = block.split('\n');
+    const headerLine = /^#{1,3} /.test(lines[0]) ? lines[0] : '';
+    const body       = headerLine ? lines.slice(1).join('\n').trim() : block;
+
+    // Drop standalone section headers with no content of their own (e.g. "## EXPERIENCIA"
+    // whose body lives in the ### subsections that were split out).
+    if (headerLine && body.length < 20) continue;
+
+    // Skills-style sections list one "**Category:** a, b, c" per line. Keep ALL
+    // categories together in ONE chunk (so a single retrieval returns the complete,
+    // deduped list and the model never sees a partial list to meta-comment on), but
+    // prepend a keyword lead-in so the chunk actually gets retrieved for tech queries.
+    const categoryLines = lines.filter((l) => /^\*\*[^*]+:\*\*/.test(l.trim()));
+    if (categoryLines.length >= 2) {
+      chunks.push(`${SKILLS_LEAD[lang]}\n${categoryLines.map((l) => l.trim()).join('\n')}`);
+      continue;
+    }
+
+    if (estimateTokens(block) <= CHUNK_MAX_TOKENS) {
+      chunks.push(block);
+    } else {
+      for (const piece of chunkText(block)) {
+        chunks.push(headerLine && !piece.startsWith(headerLine) ? `${headerLine}\n${piece}` : piece);
+      }
+    }
+  }
   return chunks;
 }
 
@@ -227,34 +281,25 @@ async function ingestChunks(
 
 // ─── Source processors ────────────────────────────────────────────────────────
 
-async function processPDF(filePath: string, lang: Lang): Promise<void> {
-  console.log(`\n[ingest] Processing PDF: ${filePath} (lang=${lang})`);
+async function processMarkdown(filePath: string, lang: Lang): Promise<void> {
+  console.log(`\n[ingest] Processing markdown: ${filePath} (lang=${lang})`);
 
-  let pdfBytes: Uint8Array;
+  let text: string;
   try {
-    pdfBytes = await Deno.readFile(filePath);
+    text = await Deno.readTextFile(filePath);
   } catch {
     // Requirement 2.4: log and continue — do not abort the whole run
     console.error(`[ingest] ✗ File not found: ${filePath} — skipping`);
     return;
   }
 
-  let text: string;
-  try {
-    const result = await extractText(pdfBytes, { mergePages: true });
-    text = Array.isArray(result.text) ? result.text.join('\n') : result.text;
-  } catch (err) {
-    console.error(`[ingest] ✗ Failed to extract text from ${filePath}:`, (err as Error).message);
-    return;
-  }
-
   if (!text?.trim()) {
-    console.warn(`[ingest] ⚠ No text extracted from ${filePath}`);
+    console.warn(`[ingest] ⚠ Empty file: ${filePath}`);
     return;
   }
 
   const source = filePath.split('/').pop() ?? filePath;
-  const chunks = chunkText(text);
+  const chunks = chunkMarkdown(text, lang);
   console.log(`[ingest] Created ${chunks.length} chunks from "${source}"`);
 
   const { ingested, errors } = await ingestChunks(chunks, source, lang);
@@ -316,9 +361,9 @@ function sleep(ms: number): Promise<void> {
 async function main(): Promise<void> {
   console.log('[ingest] Starting portfolio knowledge base ingestion...\n');
 
-  for (const src of PDF_SOURCES) {
-    if (src.type === 'pdf') {
-      await processPDF(src.path, src.lang);
+  for (const src of SOURCES) {
+    if (src.type === 'markdown') {
+      await processMarkdown(src.path, src.lang);
     } else {
       await processCronixStats(src.path);
     }
