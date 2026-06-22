@@ -67,7 +67,7 @@ const UUID_V4_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 const SIMILARITY_THRESHOLD  = 0.70;
-const MAX_MESSAGE_LENGTH     = 500;
+const MAX_MESSAGE_LENGTH     = 1000;
 const RATE_LIMIT_MAX         = 10;
 const RATE_LIMIT_WINDOW_S    = 60;
 const RAG_MATCH_COUNT        = 5;
@@ -79,12 +79,20 @@ const FALLBACK: Record<Lang, string> = {
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
+/** Domains always allowed regardless of ALLOWED_ORIGINS secret */
+const HARDCODED_ORIGINS = [
+  'https://portafolio-luis-romero.vercel.app',
+  'https://romeroluis15.github.io',
+  'http://localhost',
+  'http://127.0.0.1',
+];
+
 function buildAllowedOrigins(): string[] {
   const fromEnv = ENV.allowedOrigins
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
-  return [...fromEnv, 'http://localhost', 'http://127.0.0.1'];
+  return [...new Set([...HARDCODED_ORIGINS, ...fromEnv])];
 }
 
 const ALLOWED_ORIGINS = buildAllowedOrigins();
@@ -92,12 +100,21 @@ const ALLOWED_ORIGINS = buildAllowedOrigins();
 function isOriginAllowed(origin: string | null): boolean {
   if (!origin) return false;
   return ALLOWED_ORIGINS.some((allowed) => {
-    if (allowed === 'http://localhost' || allowed === 'http://127.0.0.1') {
+    // Prefix match for localhost/127 and vercel preview deploys
+    if (
+      allowed === 'http://localhost' ||
+      allowed === 'http://127.0.0.1'
+    ) {
       return origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1');
+    }
+    // Allow any *.vercel.app subdomain for preview deployments
+    if (allowed === 'https://portafolio-luis-romero.vercel.app') {
+      return origin === allowed || origin.startsWith('https://portafolio-luis-romero-');
     }
     return origin === allowed;
   });
 }
+
 
 function buildCorsHeaders(origin: string | null): Record<string, string> {
   return {

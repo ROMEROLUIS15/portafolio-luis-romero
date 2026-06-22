@@ -25,10 +25,10 @@
   "workspace": {
     "packageJson": {
       "dependencies": [
-        "npm:@vitest/coverage-v8@^1.6.0",
+        "npm:@vitest/coverage-v8@^3.2.6",
         "npm:fast-check@^3.20.0",
         "npm:jsdom@^24.1.0",
-        "npm:vitest@^1.6.0"
+        "npm:vitest@^3.2.6"
       ]
     }
   }

@@ -94,6 +94,7 @@
     hasHadExchange: false,
     rateLimitUntil: /** @type {number|null} */ (null),
     rateLimitTimer: /** @type {ReturnType<typeof setTimeout>|null} */ (null),
+    _justOpened:    false,  // prevent close-on-same-tick when panel opens
   };
 
   // ─── i18n helpers ──────────────────────────────────────────────────────────
@@ -246,10 +247,14 @@
 
   function attachGlobalListeners() {
     // Close on outside click — Requirement 1.3
+    // Use capture=false so the bubble's own click handler runs first and sets
+    // a short-lived flag, preventing the document listener from immediately
+    // closing the panel on the very same click that opened it.
     document.addEventListener('click', (e) => {
-      if (state.isOpen && !dom.panel.contains(e.target) && !dom.bubble.contains(e.target)) {
+      if (state.isOpen && !state._justOpened && !dom.panel.contains(e.target) && !dom.bubble.contains(e.target)) {
         closePanel();
       }
+      state._justOpened = false;
     });
     // Close on Escape — Requirement 1.3
     document.addEventListener('keydown', (e) => {
@@ -260,7 +265,8 @@
   // ─── Panel state ───────────────────────────────────────────────────────────
 
   function openPanel() {
-    state.isOpen = true;
+    state.isOpen     = true;
+    state._justOpened = true; // prevent document click listener from closing on same tick
     dom.panel.classList.add('is-open');
     dom.bubble.classList.add('is-open');
     dom.bubble.setAttribute('aria-expanded', 'true');
@@ -416,6 +422,12 @@
     const text = dom.input.value.trim();
     if (!text || state.isLoading) return;
     if (state.rateLimitUntil && Date.now() < state.rateLimitUntil) return;
+
+    // Client-side validation to avoid round-trip for obvious errors
+    if (text.length > 1000) {
+      addMessage('assistant', t('errorInvalidMsg'), { error: true });
+      return;
+    }
 
     dom.input.value        = '';
     dom.input.style.height = 'auto';
