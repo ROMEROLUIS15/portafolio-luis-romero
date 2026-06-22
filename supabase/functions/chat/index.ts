@@ -285,6 +285,33 @@ ABOUT LUIS:
 ${context}`;
 }
 
+// ─── Answer post-processing ───────────────────────────────────────────────────
+// Deterministic safety net: the smaller fallback model (8b) sometimes ignores
+// the prompt and opens with a meta phrase ("Según la información proporcionada…",
+// "Based on the provided context…"). Strip those lead-ins regardless of model so
+// the user always gets a direct, confident answer.
+
+const META_PREFIXES: RegExp[] = [
+  /^seg[uú]n (la informaci[oó]n|el contexto|los datos|lo que)[^,.:;]*[,:;.]?\s+/i,
+  /^bas[aá]ndome en (la informaci[oó]n|el contexto|los datos)[^,.:;]*[,:;.]?\s+/i,
+  /^de acuerdo con (la informaci[oó]n|el contexto|los datos)[^,.:;]*[,:;.]?\s+/i,
+  /^con base en (la informaci[oó]n|el contexto|los datos)[^,.:;]*[,:;.]?\s+/i,
+  /^based on (the provided|the available|the given|the) (context|information|data)[^,.:;]*[,:;.]?\s+/i,
+  /^according to (the )?(provided |available |given )?(context|information|data)[^,.:;]*[,:;.]?\s+/i,
+  /^from the (data|information|context)( provided| given| available)?[^,.:;]*[,:;.]?\s+/i,
+];
+
+function stripMetaPrefix(text: string): string {
+  let out = text.trimStart();
+  for (const re of META_PREFIXES) {
+    if (re.test(out)) {
+      out = out.replace(re, '');
+      break;
+    }
+  }
+  return out.length > 0 ? out.charAt(0).toUpperCase() + out.slice(1) : text;
+}
+
 // ─── LLM ──────────────────────────────────────────────────────────────────────
 
 async function callGroq(systemPrompt: string, userMessage: string, model: string): Promise<string> {
@@ -457,7 +484,7 @@ async function runRagPipeline(
 
   let answer: string;
   try {
-    answer = await callGroqWithFallback(systemPrompt, message);
+    answer = stripMetaPrefix(await callGroqWithFallback(systemPrompt, message));
   } catch (err) {
     if (err instanceof GroqRateLimitError) {
       // Soft-degrade: every model is momentarily rate-limited. Return a friendly,
