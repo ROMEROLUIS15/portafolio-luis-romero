@@ -70,7 +70,7 @@ const SIMILARITY_THRESHOLD  = 0.75;
 const MAX_MESSAGE_LENGTH     = 1000;
 const RATE_LIMIT_MAX         = 10;
 const RATE_LIMIT_WINDOW_S    = 60;
-const RAG_MATCH_COUNT        = 4;
+const RAG_MATCH_COUNT        = 6;
 const MAX_CHUNK_CHARS        = 2100;  // safety bound; ingest chunks are ~1800-2000 chars
 const GROQ_MAX_TOKENS        = 400;
 
