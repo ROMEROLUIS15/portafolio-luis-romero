@@ -262,7 +262,13 @@
     // a short-lived flag, preventing the document listener from immediately
     // closing the panel on the very same click that opened it.
     document.addEventListener('click', (e) => {
-      if (state.isOpen && !state._justOpened && !dom.panel.contains(e.target) && !dom.bubble.contains(e.target)) {
+      // Use composedPath() (snapshotted at dispatch) instead of contains():
+      // a handler such as a suggestion click may detach its target from the
+      // DOM before this listener runs, which would make contains() report the
+      // click as "outside" and wrongly close the panel.
+      const path = typeof e.composedPath === 'function' ? e.composedPath() : [];
+      const insideWidget = path.includes(dom.panel) || path.includes(dom.bubble);
+      if (state.isOpen && !state._justOpened && !insideWidget) {
         closePanel();
       }
       state._justOpened = false;
@@ -337,13 +343,9 @@
       el('span', { className: 'cw-msg-time',   textContent: formatTime(msg.timestamp) })
     );
 
-    if (msg.sources?.length > 0) {
-      const sourcesEl = el('div', { className: 'cw-msg-sources' });
-      for (const src of msg.sources) {
-        sourcesEl.appendChild(el('span', { className: 'cw-source-chip', textContent: src }));
-      }
-      wrapper.appendChild(sourcesEl);
-    }
+    // Source filenames are intentionally not rendered — they read as raw
+    // document names (e.g. a CV PDF) and look out of place in a conversational
+    // assistant. Sources are still returned by the API for observability.
 
     dom.messages.appendChild(wrapper);
   }
