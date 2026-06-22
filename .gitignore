@@ -11,3 +11,7 @@ package-lock.json
 # Coverage / build artifacts
 coverage/
 dist/
+
+# CV — personal documents, not for version control
+LuisRomero_CV_ATS_EN.md
+LuisRomero_CV_ATS_ES.md
