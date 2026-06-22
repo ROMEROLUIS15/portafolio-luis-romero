@@ -999,9 +999,9 @@ footer {
 
 .cv-dropdown-btn i { color: var(--accent); }
 .cv-dropdown-btn i:first-of-type { color: var(--text-secondary); }
-.lang-current { color: var(--text-muted); font-size: 11px; }
+.lang-current { color: var(--text-primary); font-size: 12px; font-weight: 700; }
 .lang-sep      { color: var(--accent); font-size: 11px; }
-.lang-target   { color: var(--text-primary); font-size: 12px; font-weight: 700; }
+.lang-target   { color: var(--text-muted); font-size: 11px; font-weight: normal; }
 
 /* ============================================
    RESPONSIVE — 400px (very small phones)

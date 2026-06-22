@@ -194,8 +194,7 @@
       'button',
       { className: 'cw-bubble', 'aria-label': 'Open chat assistant', 'aria-expanded': 'false', onclick: togglePanel },
       iconChat,
-      iconClose,
-      el('span', { className: 'cw-bubble-dot' })
+      iconClose
     );
   }
 
@@ -287,7 +286,6 @@
     dom.panel.classList.add('is-open');
     dom.bubble.classList.add('is-open');
     dom.bubble.setAttribute('aria-expanded', 'true');
-    dom.bubble.querySelector('.cw-bubble-dot')?.remove();
 
     if (state.messages.length === 0) {
       addMessage('assistant', t('welcomeMsg'));

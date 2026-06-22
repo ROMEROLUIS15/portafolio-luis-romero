@@ -55,23 +55,7 @@
   transform: scale(1) rotate(0deg);
 }
 
-/* Notification dot */
-.cw-bubble-dot {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  width: 10px;
-  height: 10px;
-  background: #22c55e;
-  border-radius: 50%;
-  border: 2px solid var(--bg-primary, #0e0e0e);
-  animation: cwBlink 2s ease-in-out infinite;
-}
 
-@keyframes cwBlink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.35; }
-}
 
 /* ─── Chat Panel ────────────────────────────────────────────────────────────── */
 
