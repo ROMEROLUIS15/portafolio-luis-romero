@@ -62,8 +62,8 @@ const supabase = createClient(ENV.supabaseUrl, ENV.supabaseServiceKey);
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const CHUNK_MAX_TOKENS   = 500;
-const CHUNK_OVERLAP      = 50;
+const CHUNK_MAX_TOKENS   = 350;  // keeps each chunk under the chat fn's 1600-char cap
+const CHUNK_OVERLAP      = 40;
 const BATCH_SIZE         = 20;
 const EMBED_MAX_RETRIES  = 3;
 const INSERT_MAX_RETRIES = 2;
@@ -96,9 +96,10 @@ export function chunkText(
   const words = text.split(/\s+/).filter(Boolean);
   if (words.length === 0) return [];
 
-  // ~1 token per 1.25 words (avg 5 chars/word, 4 chars/token)
-  const maxWords     = Math.floor(maxTokens / (1 / 1.25));
-  const overlapWords = Math.floor(overlap   / (1 / 1.25));
+  // ~1 token ≈ 0.75 words (a token ≈ 4 chars, a word ≈ 5-6 chars incl. space).
+  // Previously this divided by (1/1.25), producing chunks ~1.6x too large.
+  const maxWords     = Math.max(1, Math.floor(maxTokens * 0.75));
+  const overlapWords = Math.max(0, Math.floor(overlap   * 0.75));
 
   const chunks: string[] = [];
   let start = 0;
@@ -181,6 +182,17 @@ async function ingestChunks(
   const now      = new Date().toISOString();
   let   ingested = 0;
   let   errors   = 0;
+
+  // Idempotency: clear any previously-ingested rows for this source before
+  // re-inserting, so re-running the ingest never duplicates content.
+  const { error: delError } = await supabase
+    .from('documents')
+    .delete()
+    .eq('metadata->>source', source);
+  if (delError) {
+    throw new Error(`[ingest] Failed to clear existing rows for "${source}": ${delError.message}`);
+  }
+  console.log(`[ingest] Cleared existing rows for "${source}" (idempotent re-ingest)`);
 
   for (let i = 0; i < chunks.length; i += BATCH_SIZE) {
     const batch        = chunks.slice(i, i + BATCH_SIZE);

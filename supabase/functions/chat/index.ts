@@ -71,7 +71,7 @@ const MAX_MESSAGE_LENGTH     = 1000;
 const RATE_LIMIT_MAX         = 10;
 const RATE_LIMIT_WINDOW_S    = 60;
 const RAG_MATCH_COUNT        = 4;
-const MAX_CHUNK_CHARS        = 1600;  // bound per-chunk size to control Groq token usage
+const MAX_CHUNK_CHARS        = 2100;  // safety bound; ingest chunks are ~1800-2000 chars
 const GROQ_MAX_TOKENS        = 400;
 
 const FALLBACK: Record<Lang, string> = {

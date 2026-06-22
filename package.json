@@ -9,6 +9,7 @@
     "test:watch": "vitest",
     "ingest": "deno run --allow-read --allow-net --allow-env scripts/ingest.ts",
     "seed:availability": "deno run --allow-net --allow-env scripts/seed-availability.ts",
+    "dedupe": "deno run --allow-net --allow-env scripts/dedupe-documents.ts",
     "deploy:chat": "supabase functions deploy chat --project-ref dsrxcqjivhvhvpqumcvb --no-verify-jwt",
     "deploy:embed": "supabase functions deploy embed --project-ref dsrxcqjivhvhvpqumcvb",
     "db:migrate": "supabase db push --project-ref dsrxcqjivhvhvpqumcvb"
