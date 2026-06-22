@@ -14,6 +14,12 @@
       ? window.__CHAT_ENDPOINT__
       : 'https://YOUR_SUPABASE_PROJECT.supabase.co/functions/v1/chat';
 
+  /** @type {string} — public Supabase anon key, safe to embed in the frontend */
+  const ANON_KEY =
+    (typeof window !== 'undefined' && window.__CHAT_ANON_KEY__)
+      ? window.__CHAT_ANON_KEY__
+      : '';
+
   /** @readonly */
   const CONFIG = Object.freeze({
     maxMessages:       20,
@@ -435,9 +441,13 @@
 
     try {
       const lang     = getLang(); // read at exact send moment — Requirement 6.3
+      const headers = { 'Content-Type': 'application/json', 'X-Session-Token': state.sessionToken };
+      if (ANON_KEY) {
+        headers['Authorization'] = `Bearer ${ANON_KEY}`;
+      }
       const response = await fetch(ENDPOINT, {
         method:  'POST',
-        headers: { 'Content-Type': 'application/json', 'X-Session-Token': state.sessionToken },
+        headers,
         body:    JSON.stringify({ message: text, lang }),
         signal:  controller.signal,
       });

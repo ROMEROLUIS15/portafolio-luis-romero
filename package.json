@@ -8,8 +8,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "ingest": "deno run --allow-read --allow-net --allow-env scripts/ingest.ts",
-    "deploy:chat": "supabase functions deploy chat --project-ref YOUR_PROJECT_REF",
-    "db:migrate": "supabase db push --project-ref YOUR_PROJECT_REF"
+    "deploy:chat": "supabase functions deploy chat --project-ref dsrxcqjivhvhvpqumcvb --no-verify-jwt",
+    "deploy:embed": "supabase functions deploy embed --project-ref dsrxcqjivhvhvpqumcvb",
+    "db:migrate": "supabase db push --project-ref dsrxcqjivhvhvpqumcvb"
   },
   "devDependencies": {
     "vitest": "^1.6.0",
