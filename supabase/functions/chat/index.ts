@@ -74,6 +74,12 @@ const RAG_MATCH_COUNT        = 4;
 const MAX_CHUNK_CHARS        = 2100;  // safety bound; ingest chunks are ~1800-2000 chars
 const GROQ_MAX_TOKENS        = 400;
 
+// Tried in order. Each Groq model has its own rate-limit bucket, so if the
+// primary is throttled we fall back to a second model on the same account.
+const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const;
+
+const CACHE_TTL_DAYS = 7;
+
 const FALLBACK: Record<Lang, string> = {
   en: "I don't have enough context to answer that. You can reach Luis directly at lueduar15@gmail.com.",
   es: 'No tengo suficiente contexto para responder eso. Puedes contactar a Luis en lueduar15@gmail.com.',
@@ -281,7 +287,7 @@ ${context}`;
 
 // ─── LLM ──────────────────────────────────────────────────────────────────────
 
-async function callGroq(systemPrompt: string, userMessage: string): Promise<string> {
+async function callGroq(systemPrompt: string, userMessage: string, model: string): Promise<string> {
   const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
     method: 'POST',
     headers: {
@@ -289,7 +295,7 @@ async function callGroq(systemPrompt: string, userMessage: string): Promise<stri
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model:       'llama-3.3-70b-versatile',
+      model,
       temperature: 0.3,
       max_tokens:  GROQ_MAX_TOKENS,
       messages: [
@@ -302,13 +308,37 @@ async function callGroq(systemPrompt: string, userMessage: string): Promise<stri
   if (!response.ok) {
     const detail = await response.text();
     if (response.status === 429) {
-      throw new GroqRateLimitError(`Groq rate limited: ${detail.slice(0, 200)}`);
+      throw new GroqRateLimitError(`Groq rate limited (${model}): ${detail.slice(0, 200)}`);
     }
     throw new Error(`Groq API error: ${response.status} ${detail}`);
   }
 
   const data = await response.json();
   return data.choices[0].message.content as string;
+}
+
+/**
+ * Calls Groq, trying each model in GROQ_MODELS in order. Each model has its own
+ * rate-limit bucket, so a 429 on the primary falls through to the next. Only if
+ * every model is rate-limited does GroqRateLimitError propagate.
+ */
+async function callGroqWithFallback(systemPrompt: string, userMessage: string): Promise<string> {
+  let lastRateLimit: GroqRateLimitError | null = null;
+
+  for (const model of GROQ_MODELS) {
+    try {
+      return await callGroq(systemPrompt, userMessage, model);
+    } catch (err) {
+      if (err instanceof GroqRateLimitError) {
+        console.warn('[chat]', err.message);
+        lastRateLimit = err;
+        continue; // try the next model
+      }
+      throw err;
+    }
+  }
+
+  throw lastRateLimit ?? new GroqRateLimitError('All Groq models rate limited');
 }
 
 // ─── SHA-256 ──────────────────────────────────────────────────────────────────
@@ -342,6 +372,51 @@ async function logRequest(opts: {
   }
 }
 
+// ─── Answer cache ─────────────────────────────────────────────────────────────
+// Common questions (e.g. the widget's suggested ones) repeat across visitors.
+// Caching their answers skips embedding + vector search + the LLM entirely,
+// which both speeds up responses and conserves the Groq token budget.
+
+interface CachedAnswer {
+  answer:  string;
+  sources: string[];
+}
+
+function normalizeMessage(message: string): string {
+  return message.trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+async function cacheKey(message: string, lang: Lang): Promise<string> {
+  return await sha256hex(`${lang}:${normalizeMessage(message)}`);
+}
+
+async function readCache(key: string): Promise<CachedAnswer | null> {
+  const cutoff = new Date(Date.now() - CACHE_TTL_DAYS * 86_400_000).toISOString();
+  const { data, error } = await supabaseAdmin
+    .from('chat_cache')
+    .select('answer, sources')
+    .eq('cache_key', key)
+    .gt('created_at', cutoff)
+    .maybeSingle();
+
+  if (error) {
+    console.warn('[chat] cache read failed:', error.message);
+    return null; // fail open — fall through to the live pipeline
+  }
+  if (!data) return null;
+  return { answer: data.answer as string, sources: (data.sources ?? []) as string[] };
+}
+
+async function writeCache(key: string, lang: Lang, answer: string, sources: string[]): Promise<void> {
+  const { error } = await supabaseAdmin
+    .from('chat_cache')
+    .upsert(
+      { cache_key: key, lang, answer, sources, created_at: new Date().toISOString() },
+      { onConflict: 'cache_key' }
+    );
+  if (error) console.warn('[chat] cache write failed:', error.message);
+}
+
 // ─── RAG pipeline ─────────────────────────────────────────────────────────────
 
 async function runRagPipeline(
@@ -351,6 +426,14 @@ async function runRagPipeline(
   startTime: number,
   corsHeaders: Record<string, string>
 ): Promise<Response> {
+  // Cache lookup — serve repeated questions instantly, skipping embed + RAG + LLM
+  const key    = await cacheKey(message, lang);
+  const cached = await readCache(key);
+  if (cached) {
+    logRequest({ sessionToken, lang, message, chunksRetrieved: 0, responseTimeMs: Date.now() - startTime });
+    return jsonResponse({ answer: cached.answer, sources: cached.sources }, 200, corsHeaders);
+  }
+
   const embedding = await generateEmbedding(message);
   const chunks    = await retrieveChunks(embedding, lang);
 
@@ -358,6 +441,7 @@ async function runRagPipeline(
 
   // Below threshold — return fallback without invoking the LLM
   if (chunks.length === 0 || maxSimilarity < SIMILARITY_THRESHOLD) {
+    writeCache(key, lang, FALLBACK[lang], []); // deterministic — safe to cache
     logRequest({
       sessionToken,
       lang,
@@ -373,11 +457,12 @@ async function runRagPipeline(
 
   let answer: string;
   try {
-    answer = await callGroq(systemPrompt, message);
+    answer = await callGroqWithFallback(systemPrompt, message);
   } catch (err) {
     if (err instanceof GroqRateLimitError) {
-      // Soft-degrade: the LLM is momentarily rate-limited. Return a friendly,
+      // Soft-degrade: every model is momentarily rate-limited. Return a friendly,
       // retryable message with 200 so the widget shows it instead of a hard error.
+      // Not cached — this is a transient state, not a real answer.
       console.warn('[chat]', err.message);
       logRequest({
         sessionToken,
@@ -392,6 +477,8 @@ async function runRagPipeline(
   }
 
   const sources = [...new Set(chunks.map((c) => c.source))];
+
+  writeCache(key, lang, answer, sources); // fire-and-forget — never blocks the response
 
   logRequest({
     sessionToken,
