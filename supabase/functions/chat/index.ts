@@ -70,12 +70,24 @@ const SIMILARITY_THRESHOLD  = 0.70;
 const MAX_MESSAGE_LENGTH     = 1000;
 const RATE_LIMIT_MAX         = 10;
 const RATE_LIMIT_WINDOW_S    = 60;
-const RAG_MATCH_COUNT        = 5;
+const RAG_MATCH_COUNT        = 4;
+const MAX_CHUNK_CHARS        = 1600;  // bound per-chunk size to control Groq token usage
+const GROQ_MAX_TOKENS        = 400;
 
 const FALLBACK: Record<Lang, string> = {
   en: "I don't have enough context to answer that. You can reach Luis directly at lueduar15@gmail.com.",
   es: 'No tengo suficiente contexto para responder eso. Puedes contactar a Luis en lueduar15@gmail.com.',
 };
+
+// Shown when the upstream LLM is momentarily rate-limited — a soft, retryable
+// state, never surfaced as a hard error.
+const BUSY_MESSAGE: Record<Lang, string> = {
+  en: "I'm getting a lot of questions right now — give me a few seconds and ask again.",
+  es: 'Estoy recibiendo muchas preguntas en este momento — espera unos segundos y vuelve a intentarlo.',
+};
+
+// Thrown when Groq returns 429 so the pipeline can degrade gracefully.
+class GroqRateLimitError extends Error {}
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -237,7 +249,7 @@ async function retrieveChunks(embedding: number[], lang: Lang): Promise<ChunkRes
 
 function buildSystemPrompt(chunks: ChunkResult[], lang: Lang): string {
   const context = chunks
-    .map((c, i) => `[${i + 1}] (${c.source})\n${c.content}`)
+    .map((c, i) => `[${i + 1}] (${c.source})\n${c.content.slice(0, MAX_CHUNK_CHARS)}`)
     .join('\n\n');
 
   if (lang === 'es') {
@@ -279,7 +291,7 @@ async function callGroq(systemPrompt: string, userMessage: string): Promise<stri
     body: JSON.stringify({
       model:       'llama-3.3-70b-versatile',
       temperature: 0.3,
-      max_tokens:  512,
+      max_tokens:  GROQ_MAX_TOKENS,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userMessage  },
@@ -288,7 +300,11 @@ async function callGroq(systemPrompt: string, userMessage: string): Promise<stri
   });
 
   if (!response.ok) {
-    throw new Error(`Groq API error: ${response.status} ${await response.text()}`);
+    const detail = await response.text();
+    if (response.status === 429) {
+      throw new GroqRateLimitError(`Groq rate limited: ${detail.slice(0, 200)}`);
+    }
+    throw new Error(`Groq API error: ${response.status} ${detail}`);
   }
 
   const data = await response.json();
@@ -354,8 +370,28 @@ async function runRagPipeline(
   }
 
   const systemPrompt = buildSystemPrompt(chunks, lang);
-  const answer       = await callGroq(systemPrompt, message);
-  const sources      = [...new Set(chunks.map((c) => c.source))];
+
+  let answer: string;
+  try {
+    answer = await callGroq(systemPrompt, message);
+  } catch (err) {
+    if (err instanceof GroqRateLimitError) {
+      // Soft-degrade: the LLM is momentarily rate-limited. Return a friendly,
+      // retryable message with 200 so the widget shows it instead of a hard error.
+      console.warn('[chat]', err.message);
+      logRequest({
+        sessionToken,
+        lang,
+        message,
+        chunksRetrieved: chunks.length,
+        responseTimeMs:  Date.now() - startTime,
+      });
+      return jsonResponse({ answer: BUSY_MESSAGE[lang], sources: [] }, 200, corsHeaders);
+    }
+    throw err;
+  }
+
+  const sources = [...new Set(chunks.map((c) => c.source))];
 
   logRequest({
     sessionToken,
