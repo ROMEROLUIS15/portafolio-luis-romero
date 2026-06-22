@@ -1,0 +1,22 @@
+# ─── GitHub Linguist — Language Detection ─────────────────────────────────────
+# Exclude HTML markup files from language statistics so that TypeScript/JavaScript
+# shows as the primary language (reflecting the actual engineering work).
+
+# Mark HTML pages as documentation (excluded from language stats)
+index.html linguist-documentation=true
+spanish/index.html linguist-documentation=true
+
+# Ensure TypeScript Edge Functions and Deno scripts are detected
+supabase/functions/**/*.ts linguist-detectable=true
+scripts/*.ts linguist-detectable=true
+
+# Ensure JavaScript assets are detected
+assets/js/*.js linguist-detectable=true
+
+# Mark generated / lock files as vendored (excluded)
+deno.lock linguist-vendored=true
+package-lock.json linguist-vendored=true
+supabase/.temp/** linguist-vendored=true
+
+# Markdown docs — excluded from language stats (standard practice)
+*.md linguist-documentation=true
