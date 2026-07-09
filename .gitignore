@@ -4,6 +4,11 @@
 .env.*.local
 supabase/functions/chat/.env.local
 
+# Claude Code local settings. Approved shell commands are recorded verbatim in
+# the allow-list, so any credential passed on a command line ends up in here.
+# .claude/settings.json (shared, no secrets) stays tracked.
+.claude/settings.local.json
+
 # Dependencies
 node_modules/
 package-lock.json
