@@ -3,10 +3,23 @@ echo ========================================
 echo   Ingesta de datos para Agente Conversacional
 echo ========================================
 echo.
-echo Configurando variables de entorno...
-set SUPABASE_URL=https://dsrxcqjivhvhvpqumcvb.supabase.co
-set SUPABASE_SERVICE_ROLE_KEY=***REDACTED***
-set SUPABASE_ANON_KEY=sb_publishable_2RJU6BMuljCO8fNHtQcQzw_yFEzXG7E
+echo Cargando variables de entorno desde .env...
+if not exist ".env" (
+    echo ERROR: No se encontro .env
+    echo Copia .env.example a .env y rellena tus claves.
+    pause
+    exit /b 1
+)
+
+for /f "usebackq eol=# tokens=1,* delims==" %%A in (".env") do set "%%A=%%B"
+
+for %%V in (SUPABASE_URL SUPABASE_SERVICE_ROLE_KEY SUPABASE_ANON_KEY) do (
+    if not defined %%V (
+        echo ERROR: Falta %%V en .env
+        pause
+        exit /b 1
+    )
+)
 
 echo.
 echo Verificando archivos fuente...

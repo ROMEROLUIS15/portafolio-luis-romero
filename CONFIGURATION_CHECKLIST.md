@@ -30,7 +30,7 @@
 4. Scroll to **Secrets** or **Environment Variables**
 5. Add:
    - **Name**: `GROQ_API_KEY`
-   - **Value**: `***REDACTED***|x`
+   - **Value**: the value of `GROQ_API_KEY` in your local `.env` (never commit it)
 6. Save and click **Deploy** (or **Save & Deploy**)
 
 #### Option B: Via Supabase CLI (if PAT available)
@@ -39,8 +39,8 @@
 # Login with Personal Access Token (PAT)
 supabase login --token YOUR_PAT_HERE
 
-# Set the secret
-supabase secrets set GROQ_API_KEY=***REDACTED***|x
+# Set the secret — reads the value from .env, never hardcode it here
+supabase secrets set GROQ_API_KEY="$(grep '^GROQ_API_KEY=' .env | cut -d= -f2-)"
 
 # Redeploy the function
 supabase functions deploy chat --project-ref dsrxcqjivhvhvpqumcvb
