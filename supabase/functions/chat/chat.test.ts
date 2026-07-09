@@ -1,361 +1,423 @@
 /**
- * Edge Function — Property-Based Tests
+ * Edge Function — unit + property-based tests
  * Feature: portfolio-conversational-agent
- * Uses fast-check via esm.sh in Deno environment
  *
- * Run: deno test --allow-env supabase/functions/chat/chat.test.ts
+ * Run: deno test --config supabase/functions/deno.json --allow-env --allow-net \
+ *        supabase/functions/chat/chat.test.ts
+ *
+ * Everything under test is imported from ./lib.ts. Nothing is reimplemented here:
+ * an earlier version of this file kept private copies of isValidMessage,
+ * buildSystemPrompt and friends, which silently drifted from the real code (a
+ * 500-char limit against the real 1000, assertions against a system prompt that
+ * had been rewritten). Those tests passed while verifying dead code.
  */
 
 // @ts-ignore — fast-check via esm.sh
 import fc from 'https://esm.sh/fast-check@3.20.0';
 import {
+  assert,
   assertEquals,
   assertNotEquals,
   assertMatch,
+  assertRejects,
+  assertStringIncludes,
 } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
-// ─── Import handler under test ────────────────────────────────────────────────
-// We test pure functions extracted from the Edge Function logic.
-// The handler itself is tested via integration tests.
+import {
+  GROQ_MAX_TOKENS,
+  GROQ_MODELS,
+  GroqEmptyCompletionError,
+  GroqRateLimitError,
+  MAX_MESSAGE_LENGTH,
+  SIMILARITY_THRESHOLD,
+  buildAllowedOrigins,
+  buildCorsHeaders,
+  buildSystemPrompt,
+  cacheKey,
+  callGroqWithFallback,
+  isOriginAllowed,
+  isValidMessage,
+  isValidUUIDv4,
+  normalizeLang,
+  normalizeMessage,
+  sha256hex,
+  shouldUseFallback,
+  stripMetaPrefix,
+  type ChunkResult,
+} from './lib.ts';
 
-/** UUID v4 regex — same as in index.ts */
-const UUID_V4_REGEX =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+// ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-function isValidUUIDv4(token: string | null | undefined): boolean {
-  if (!token) return false;
-  return UUID_V4_REGEX.test(token);
+function chunk(similarity: number, overrides: Partial<ChunkResult> = {}): ChunkResult {
+  return {
+    id: 1n,
+    content: 'Luis Romero is an AI Engineer.',
+    source: 'cv.md',
+    lang: 'en',
+    similarity,
+    ...overrides,
+  };
 }
 
-function isValidMessage(msg: unknown): boolean {
-  return typeof msg === 'string' && msg.length >= 1 && msg.length <= 500;
+/** Builds a fetch stub that replays a queued response per call, recording models. */
+function stubFetch(
+  queue: Array<{ status: number; body: unknown }>
+): { fetchImpl: typeof fetch; modelsCalled: string[] } {
+  const modelsCalled: string[] = [];
+  let i = 0;
+
+  const fetchImpl = ((_url: string | URL | Request, init?: RequestInit) => {
+    modelsCalled.push(JSON.parse(String(init?.body)).model);
+    const next = queue[i++];
+    if (!next) throw new Error('stubFetch: more calls than queued responses');
+    return Promise.resolve(
+      new Response(JSON.stringify(next.body), { status: next.status })
+    );
+  }) as unknown as typeof fetch;
+
+  return { fetchImpl, modelsCalled };
 }
 
-function normalizeLang(lang: unknown): 'es' | 'en' {
-  if (lang === 'es') return 'es';
-  return 'en';
-}
+const okBody = (content: string) => ({
+  choices: [{ message: { content }, finish_reason: 'stop' }],
+});
 
-async function sha256hex(text: string): Promise<string> {
-  const bytes = new TextEncoder().encode(text);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', bytes);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map((b) => b.toString(16).padStart(2, '0')).join('');
-}
+// ─── Property 1: message validation ───────────────────────────────────────────
 
-function buildSystemPrompt(
-  chunks: Array<{ content: string; source: string }>,
-  lang: 'es' | 'en'
-): string {
-  const context = chunks
-    .map((c, i) => `[${i + 1}] (${c.source})\n${c.content}`)
-    .join('\n\n');
+Deno.test('Property 1 — Messages outside 1..MAX_MESSAGE_LENGTH are rejected', () => {
+  assertEquals(isValidMessage(''), false);
+  assertEquals(isValidMessage('a'.repeat(MAX_MESSAGE_LENGTH + 1)), false);
+  assertEquals(isValidMessage(undefined), false);
+  assertEquals(isValidMessage(null), false);
+  assertEquals(isValidMessage(42), false);
 
-  if (lang === 'es') {
-    return `Eres un asistente de IA que responde preguntas sobre Luis Romero, un AI Engineer y Backend Developer.
-
-INSTRUCCIONES ESTRICTAS:
-- Responde ÚNICAMENTE usando la información del contexto provisto a continuación.
-- NUNCA inventes datos, fechas, tecnologías, proyectos ni métricas que no estén en el contexto.
-- Si el contexto no contiene información suficiente para responder, indícalo claramente.
-- Responde siempre en español.
-- Sé conciso y profesional.
-
-CONTEXTO:
-${context}`;
-  }
-
-  return `You are an AI assistant that answers questions about Luis Romero, an AI Engineer and Backend Developer.
-
-STRICT INSTRUCTIONS:
-- Answer ONLY using the information from the context provided below.
-- NEVER invent data, dates, technologies, projects, or metrics not present in the context.
-- If the context does not contain enough information to answer, state that clearly.
-- Always respond in English.
-- Be concise and professional.
-
-CONTEXT:
-${context}`;
-}
-
-// ─── Property 1: Validación de mensajes rechaza entradas fuera de rango ───────
-// Feature: portfolio-conversational-agent, Property 1: Validación de mensajes rechaza entradas fuera de rango
-
-Deno.test('Property 1 — Invalid messages rejected (empty, >500 chars, undefined)', () => {
   fc.assert(
     fc.property(
-      fc.oneof(
-        fc.constant(''),
-        fc.string({ minLength: 501, maxLength: 1000 }),
-        fc.constant(null),
-        fc.constant(undefined),
-      ) as fc.Arbitrary<unknown>,
-      (invalidMessage) => {
-        const result = isValidMessage(invalidMessage);
-        assertEquals(
-          result,
-          false,
-          `Expected isValidMessage(${JSON.stringify(invalidMessage)}) to be false`
-        );
-      }
+      fc.string({ minLength: MAX_MESSAGE_LENGTH + 1, maxLength: MAX_MESSAGE_LENGTH + 200 }),
+      (tooLong) => assertEquals(isValidMessage(tooLong), false)
     ),
-    { numRuns: 100, verbose: true }
+    { numRuns: 50 }
   );
 });
 
-Deno.test('Property 1 — Valid messages accepted (1–500 chars)', () => {
+Deno.test('Property 1 — Messages of 1..MAX_MESSAGE_LENGTH chars are accepted', () => {
+  // Boundary: the real limit is 1000, not the 500 the old test asserted.
+  assertEquals(isValidMessage('a'), true);
+  assertEquals(isValidMessage('a'.repeat(MAX_MESSAGE_LENGTH)), true);
+
   fc.assert(
     fc.property(
-      fc.string({ minLength: 1, maxLength: 500 }),
-      (validMessage) => {
-        const result = isValidMessage(validMessage);
-        assertEquals(
-          result,
-          true,
-          `Expected isValidMessage("${validMessage.slice(0, 30)}...") to be true`
-        );
-      }
+      fc.string({ minLength: 1, maxLength: MAX_MESSAGE_LENGTH }),
+      (msg) => assertEquals(isValidMessage(msg), true)
     ),
-    { numRuns: 100, verbose: true }
+    { numRuns: 100 }
   );
 });
 
-// ─── Property 3: Session token inválido rechazado en todo caso ────────────────
-// Feature: portfolio-conversational-agent, Property 3: Session token inválido rechazado en todo caso
+// ─── Property 3: session token validation ─────────────────────────────────────
 
 Deno.test('Property 3 — Invalid session tokens rejected', () => {
-  fc.assert(
-    fc.property(
-      fc.oneof(
-        fc.constant(''),
-        fc.constant(null),
-        fc.constant(undefined),
-        // Random strings that are very unlikely to be valid UUIDs
-        fc.string({ minLength: 1, maxLength: 50 }).filter(
-          (s) => !UUID_V4_REGEX.test(s)
-        ),
-      ) as fc.Arbitrary<string | null | undefined>,
-      (invalidToken) => {
-        const result = isValidUUIDv4(invalidToken);
-        assertEquals(
-          result,
-          false,
-          `Expected isValidUUIDv4(${JSON.stringify(invalidToken)}) to be false`
-        );
-      }
-    ),
-    { numRuns: 100, verbose: true }
-  );
+  for (const bad of ['', 'not-a-uuid', '123', null, undefined,
+    '00000000-0000-0000-0000-000000000000']) {
+    assertEquals(isValidUUIDv4(bad as string), false, `should reject: ${bad}`);
+  }
 });
 
 Deno.test('Property 3 — Valid UUID v4 tokens accepted', () => {
-  // Generate valid UUID v4s
-  const validUUIDs = Array.from({ length: 20 }, () =>
-    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
-      const r = Math.floor(Math.random() * 16);
-      const v = c === 'x' ? r : (r & 0x3) | 0x8;
-      return v.toString(16);
-    })
+  fc.assert(
+    fc.property(fc.uuidV(4), (id: string) => assertEquals(isValidUUIDv4(id), true)),
+    { numRuns: 100 }
   );
-
-  for (const uuid of validUUIDs) {
-    assertEquals(isValidUUIDv4(uuid), true, `Expected ${uuid} to be valid UUID v4`);
-  }
 });
 
-// ─── Property 4: Threshold de similitud determina invocación al LLM ──────────
-// Feature: portfolio-conversational-agent, Property 4: Threshold de similitud determina invocación al LLM
+// ─── Property 4: retrieval threshold ──────────────────────────────────────────
 
-Deno.test('Property 4 — Low similarity triggers fallback (no LLM call)', () => {
-  const THRESHOLD = 0.70;
+Deno.test('Property 4 — Empty or low-similarity chunks trigger fallback', () => {
+  assertEquals(shouldUseFallback([]), true);
 
   fc.assert(
     fc.property(
-      fc.array(
-        fc.float({ min: 0, max: 0.699, noNaN: true }),
-        { minLength: 1, maxLength: 5 }
-      ),
-      (lowSimilarities) => {
-        const maxSimilarity = Math.max(...lowSimilarities);
-        const shouldCallLLM = maxSimilarity >= THRESHOLD;
-        assertEquals(
-          shouldCallLLM,
-          false,
-          `With max similarity ${maxSimilarity.toFixed(4)}, LLM should NOT be called`
-        );
-      }
+      fc.array(fc.double({ min: 0, max: SIMILARITY_THRESHOLD - 0.0001, noNaN: true }),
+        { minLength: 1, maxLength: 5 }),
+      (sims) => assertEquals(shouldUseFallback(sims.map((s) => chunk(s))), true)
     ),
-    { numRuns: 100, verbose: true }
+    { numRuns: 100 }
   );
 });
 
-Deno.test('Property 4 — High similarity triggers LLM call', () => {
-  const THRESHOLD = 0.70;
-
+Deno.test('Property 4 — Any chunk at or above the threshold reaches the LLM', () => {
   fc.assert(
     fc.property(
-      fc.array(
-        fc.float({ min: 0.70, max: 1.0, noNaN: true }),
-        { minLength: 1, maxLength: 5 }
-      ),
-      (highSimilarities) => {
-        const maxSimilarity = Math.max(...highSimilarities);
-        const shouldCallLLM = maxSimilarity >= THRESHOLD;
-        assertEquals(
-          shouldCallLLM,
-          true,
-          `With max similarity ${maxSimilarity.toFixed(4)}, LLM SHOULD be called`
-        );
+      fc.array(fc.double({ min: 0, max: 1, noNaN: true }), { minLength: 0, maxLength: 4 }),
+      fc.double({ min: SIMILARITY_THRESHOLD, max: 1, noNaN: true }),
+      (noise, strong) => {
+        const chunks = [...noise, strong].map((s) => chunk(s));
+        assertEquals(shouldUseFallback(chunks), false);
       }
     ),
-    { numRuns: 100, verbose: true }
+    { numRuns: 100 }
   );
 });
 
-// ─── Property 5: System prompt reflects request language ─────────────────────
-// Feature: portfolio-conversational-agent, Property 5: El system prompt siempre refleja el idioma de la petición
+// ─── Property 5 & 6: system prompt ────────────────────────────────────────────
 
 Deno.test('Property 5 — System prompt language matches request lang', () => {
-  const testChunks = [{ content: 'Test content', source: 'test.pdf' }];
+  const chunks = [chunk(0.9)];
+  assertStringIncludes(buildSystemPrompt(chunks, 'es'), 'Responde siempre en español');
+  assertStringIncludes(buildSystemPrompt(chunks, 'en'), 'Always respond in English');
+});
 
+Deno.test('Property 6 — System prompt always restricts the agent to Luis Romero', () => {
   fc.assert(
     fc.property(
-      fc.oneof(
-        fc.constant('es'),
-        fc.constant('en'),
-        fc.string({ minLength: 1, maxLength: 5 }), // invalid langs default to 'en'
-      ) as fc.Arbitrary<string>,
-      (lang) => {
-        const normalizedLang = normalizeLang(lang);
-        const prompt = buildSystemPrompt(testChunks, normalizedLang);
-
-        if (lang === 'es') {
-          // Spanish prompt must contain Spanish instructions
-          assertEquals(
-            prompt.includes('Responde ÚNICAMENTE'),
-            true,
-            `ES prompt must contain Spanish restriction instructions`
-          );
-          assertEquals(
-            prompt.includes('NUNCA inventes'),
-            true,
-            `ES prompt must contain Spanish anti-hallucination instruction`
-          );
-        } else {
-          // English prompt (default for any non-'es' value)
-          assertEquals(
-            prompt.includes('Answer ONLY'),
-            true,
-            `EN prompt must contain English restriction instructions`
-          );
-          assertEquals(
-            prompt.includes('NEVER invent'),
-            true,
-            `EN prompt must contain English anti-hallucination instruction`
-          );
-        }
+      fc.constantFrom<'es' | 'en'>('es', 'en'),
+      fc.array(fc.string({ maxLength: 80 }), { minLength: 1, maxLength: 4 }),
+      (lang, contents) => {
+        const prompt = buildSystemPrompt(contents.map((c) => chunk(0.9, { content: c })), lang);
+        assertStringIncludes(prompt, 'Luis Romero');
+        assertMatch(prompt, /NUNCA inventes|NEVER invent/);
       }
     ),
-    { numRuns: 100, verbose: true }
+    { numRuns: 50 }
   );
 });
 
-// ─── Property 6: System prompt always contains restriction instructions ───────
-// Feature: portfolio-conversational-agent, Property 6: El system prompt siempre contiene instrucciones de restricción sobre Luis Romero
-
-Deno.test('Property 6 — System prompt always contains Luis Romero restriction', () => {
-  fc.assert(
-    fc.property(
-      fc.array(
-        fc.record({
-          content: fc.string({ minLength: 1, maxLength: 200 }),
-          source: fc.string({ minLength: 1, maxLength: 50 }),
-        }),
-        { minLength: 0, maxLength: 5 }
-      ),
-      fc.oneof(fc.constant('es' as const), fc.constant('en' as const)),
-      (chunks, lang) => {
-        const prompt = buildSystemPrompt(chunks, lang);
-
-        // Must always reference Luis Romero
-        assertEquals(
-          prompt.includes('Luis Romero'),
-          true,
-          `System prompt must always reference Luis Romero`
-        );
-
-        // Must always have restriction instruction (in either language)
-        const hasRestriction =
-          prompt.includes('Answer ONLY') || prompt.includes('Responde ÚNICAMENTE');
-        assertEquals(
-          hasRestriction,
-          true,
-          `System prompt must always contain restriction instructions`
-        );
-
-        // Must always prohibit invention (in either language)
-        const hasAntiHallucination =
-          prompt.includes('NEVER invent') || prompt.includes('NUNCA inventes');
-        assertEquals(
-          hasAntiHallucination,
-          true,
-          `System prompt must always contain anti-hallucination instructions`
-        );
-      }
-    ),
-    { numRuns: 100, verbose: true }
-  );
+Deno.test('Property 6 — System prompt forbids markdown (widget renders textContent)', () => {
+  // Regression guard: gpt-oss emits markdown freely, and the widget prints the
+  // answer verbatim, so "### Title" and "**bold**" would reach the user literally.
+  assertMatch(buildSystemPrompt([chunk(0.9)], 'es'), /NUNCA uses markdown/);
+  assertMatch(buildSystemPrompt([chunk(0.9)], 'en'), /NEVER use markdown/);
 });
-
-// ─── Property 7: Privacy — only SHA-256 hash stored, never plaintext ─────────
-// Feature: portfolio-conversational-agent, Property 7: Privacidad del mensaje — solo hash SHA-256 almacenado
-
-Deno.test('Property 7 — Message stored as SHA-256 hash, never plaintext', async () => {
-  await fc.assert(
-    fc.asyncProperty(
-      fc.string({ minLength: 1, maxLength: 500 }),
-      async (message) => {
-        const expectedHash = await sha256hex(message);
-
-        // Simulate what the Edge Function does: build logEntry
-        const logEntry = {
-          session_token: crypto.randomUUID(),
-          lang: 'en',
-          message_hash: await sha256hex(message),
-          chunks_retrieved: 3,
-          response_time_ms: 450,
-        };
-
-        // Verify hash is correct
-        assertEquals(logEntry.message_hash, expectedHash);
-
-        // Verify plaintext message does NOT appear in any field
-        const serialized = JSON.stringify(logEntry);
-        assertEquals(
-          serialized.includes(message),
-          false,
-          `Plaintext message "${message.slice(0, 30)}" must NOT appear in log entry`
-        );
-
-        // SHA-256 output must be 64 hex chars
-        assertMatch(logEntry.message_hash, /^[a-f0-9]{64}$/);
-      }
-    ),
-    { numRuns: 100, verbose: true }
-  );
-});
-
-// ─── Property 6 (lang normalization): non-es/en defaults to en ───────────────
 
 Deno.test('Property 6 — Lang normalization: non-es/en values default to en', () => {
   fc.assert(
-    fc.property(
-      fc.string().filter(s => s !== 'es' && s !== 'en'),
-      (invalidLang) => {
-        const result = normalizeLang(invalidLang);
-        assertEquals(result, 'en', `normalizeLang("${invalidLang}") should default to "en"`);
-      }
-    ),
-    { numRuns: 100, verbose: true }
+    fc.property(fc.anything(), (v) => {
+      const out = normalizeLang(v);
+      assert(out === 'es' || out === 'en');
+      if (v !== 'es') assertEquals(out, 'en');
+    }),
+    { numRuns: 100 }
   );
+});
+
+// ─── Property 7: message hashing ──────────────────────────────────────────────
+
+Deno.test('Property 7 — Message stored as SHA-256 hash, never plaintext', async () => {
+  const message = 'Cuál es el email de Luis?';
+  const hash = await sha256hex(message);
+
+  assertMatch(hash, /^[0-9a-f]{64}$/);
+  assertNotEquals(hash, message);
+  assertEquals(hash, await sha256hex(message)); // deterministic
+  assertNotEquals(hash, await sha256hex(message + '.'));
+});
+
+// ─── stripMetaPrefix ──────────────────────────────────────────────────────────
+
+Deno.test('stripMetaPrefix — removes meta lead-ins and recapitalises', () => {
+  const cases: Array<[string, string]> = [
+    ['Según la información proporcionada, Luis usa Deno.', 'Luis usa Deno.'],
+    ['Basándome en el contexto: trabaja en Cronix.', 'Trabaja en Cronix.'],
+    ['Based on the provided context, Luis is an engineer.', 'Luis is an engineer.'],
+    ['According to the information, he uses Deno.', 'He uses Deno.'],
+    ['From the data provided, he ships fast.', 'He ships fast.'],
+  ];
+  for (const [input, expected] of cases) {
+    assertEquals(stripMetaPrefix(input), expected, `failed on: ${input}`);
+  }
+});
+
+Deno.test('stripMetaPrefix — leaves clean answers untouched', () => {
+  for (const clean of [
+    'Luis Romero es AI Engineer.',
+    'Segunda opción: usar Redis.',   // "Segun" is a prefix of "Segunda" — must not match
+    'According to Luis, Deno is great.', // "According to Luis" is not a meta lead-in
+  ]) {
+    assertEquals(stripMetaPrefix(clean), clean, `mangled: ${clean}`);
+  }
+});
+
+Deno.test('stripMetaPrefix — never returns an empty string', () => {
+  fc.assert(
+    fc.property(fc.string(), (s) => {
+      const out = stripMetaPrefix(s);
+      if (s.trim().length > 0) assert(out.length > 0);
+    }),
+    { numRuns: 100 }
+  );
+});
+
+// ─── normalizeMessage / cacheKey ──────────────────────────────────────────────
+
+Deno.test('normalizeMessage — accents, punctuation and spacing collapse to one key', () => {
+  assertEquals(normalizeMessage('¿Está disponible?'), 'esta disponible');
+  assertEquals(normalizeMessage('ESTA   disponible!!'), 'esta disponible');
+  assertEquals(normalizeMessage('  ¡Está,  Disponible!  '), 'esta disponible');
+});
+
+Deno.test('cacheKey — same question in different shapes hits the same key', async () => {
+  const a = await cacheKey('¿Está disponible?', 'es');
+  const b = await cacheKey('esta disponible', 'es');
+  assertEquals(a, b);
+});
+
+Deno.test('cacheKey — language is part of the key', async () => {
+  assertNotEquals(await cacheKey('same text', 'es'), await cacheKey('same text', 'en'));
+});
+
+Deno.test('cacheKey — normalization is idempotent', () => {
+  fc.assert(
+    fc.property(fc.string(), (s) => {
+      const once = normalizeMessage(s);
+      assertEquals(normalizeMessage(once), once);
+    }),
+    { numRuns: 100 }
+  );
+});
+
+// ─── isOriginAllowed ──────────────────────────────────────────────────────────
+
+Deno.test('isOriginAllowed — allows production, previews and localhost', () => {
+  const allowed = buildAllowedOrigins('');
+  for (const ok of [
+    'https://portafolio-luis-romero.vercel.app',
+    'https://portafolio-luis-romero-abc123.vercel.app',
+    'https://romeroluis15.github.io',
+    'http://localhost:5500',
+    'http://127.0.0.1:8080',
+  ]) {
+    assertEquals(isOriginAllowed(ok, allowed), true, `should allow: ${ok}`);
+  }
+});
+
+Deno.test('isOriginAllowed — rejects null, look-alikes and unknown hosts', () => {
+  const allowed = buildAllowedOrigins('');
+  for (const bad of [
+    null,
+    '',
+    'https://evil.com',
+    'https://portafolio-luis-romero.vercel.app.evil.com',
+    'https://romeroluis15.github.io.evil.com',
+    // Prefix-confusion attacks: each of these begins with a string we allow.
+    // A startsWith() guard would let all four through.
+    'http://localhost.evil.com',
+    'http://localhostx.evil.com',
+    'http://127.0.0.1.evil.com',
+    'https://portafolio-luis-romero-x.evil.com',
+  ]) {
+    assertEquals(isOriginAllowed(bad, allowed), false, `should reject: ${bad}`);
+  }
+});
+
+Deno.test('isOriginAllowed — extra origins come from the env list', () => {
+  const allowed = buildAllowedOrigins('https://custom.dev, https://other.dev');
+  assertEquals(isOriginAllowed('https://custom.dev', allowed), true);
+  assertEquals(isOriginAllowed('https://other.dev', allowed), true);
+  assertEquals(isOriginAllowed('https://nope.dev', allowed), false);
+});
+
+Deno.test('buildCorsHeaders — echoes allowed origin, blanks a rejected one', () => {
+  const allowed = buildAllowedOrigins('');
+  assertEquals(
+    buildCorsHeaders('https://romeroluis15.github.io', allowed)['Access-Control-Allow-Origin'],
+    'https://romeroluis15.github.io'
+  );
+  assertEquals(
+    buildCorsHeaders('https://evil.com', allowed)['Access-Control-Allow-Origin'],
+    ''
+  );
+});
+
+// ─── callGroqWithFallback ─────────────────────────────────────────────────────
+
+Deno.test('callGroqWithFallback — returns the primary model answer on success', async () => {
+  const { fetchImpl, modelsCalled } = stubFetch([{ status: 200, body: okBody('hola') }]);
+  const out = await callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl });
+
+  assertEquals(out, 'hola');
+  assertEquals(modelsCalled, [GROQ_MODELS[0]]);
+});
+
+Deno.test('callGroqWithFallback — a 429 falls through to the next model', async () => {
+  const { fetchImpl, modelsCalled } = stubFetch([
+    { status: 429, body: { error: 'rate limited' } },
+    { status: 200, body: okBody('desde el fallback') },
+  ]);
+  const out = await callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl });
+
+  assertEquals(out, 'desde el fallback');
+  assertEquals(modelsCalled, [GROQ_MODELS[0], GROQ_MODELS[1]]);
+});
+
+Deno.test('callGroqWithFallback — an empty completion falls through to the next model', async () => {
+  // A reasoning model can spend the whole budget on its chain-of-thought and
+  // return content: "". That must not surface as a blank chat bubble.
+  const { fetchImpl, modelsCalled } = stubFetch([
+    { status: 200, body: { choices: [{ message: { content: '' }, finish_reason: 'length' }] } },
+    { status: 200, body: okBody('respuesta real') },
+  ]);
+  const out = await callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl });
+
+  assertEquals(out, 'respuesta real');
+  assertEquals(modelsCalled, [GROQ_MODELS[0], GROQ_MODELS[1]]);
+});
+
+Deno.test('callGroqWithFallback — whitespace-only content counts as empty', async () => {
+  const { fetchImpl } = stubFetch([
+    { status: 200, body: okBody('   \n  ') },
+    { status: 200, body: okBody('real') },
+  ]);
+  assertEquals(await callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl }), 'real');
+});
+
+Deno.test('callGroqWithFallback — every model rate limited propagates GroqRateLimitError', async () => {
+  const { fetchImpl, modelsCalled } = stubFetch([
+    { status: 429, body: { error: 'rate limited' } },
+    { status: 429, body: { error: 'rate limited' } },
+  ]);
+  await assertRejects(
+    () => callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl }),
+    GroqRateLimitError
+  );
+  assertEquals(modelsCalled.length, GROQ_MODELS.length);
+});
+
+Deno.test('callGroqWithFallback — every model empty also throws, never returns ""', async () => {
+  const { fetchImpl } = stubFetch([
+    { status: 200, body: okBody('') },
+    { status: 200, body: okBody('') },
+  ]);
+  await assertRejects(() => callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl }));
+});
+
+Deno.test('callGroqWithFallback — a non-429 error aborts without trying the next model', async () => {
+  const { fetchImpl, modelsCalled } = stubFetch([
+    { status: 401, body: { error: 'invalid api key' } },
+  ]);
+  await assertRejects(
+    () => callGroqWithFallback('sys', 'msg', { apiKey: 'bad', fetchImpl }),
+    Error,
+    'Groq API error: 401'
+  );
+  assertEquals(modelsCalled, [GROQ_MODELS[0]], 'must not burn the fallback on an auth error');
+});
+
+Deno.test('callGroqWithFallback — sends reasoning params gpt-oss needs', async () => {
+  let sent: Record<string, unknown> = {};
+  const fetchImpl = ((_u: unknown, init?: RequestInit) => {
+    sent = JSON.parse(String(init?.body));
+    return Promise.resolve(new Response(JSON.stringify(okBody('ok')), { status: 200 }));
+  }) as unknown as typeof fetch;
+
+  await callGroqWithFallback('sys', 'msg', { apiKey: 'k', fetchImpl });
+
+  assertEquals(sent.max_completion_tokens, GROQ_MAX_TOKENS);
+  assertEquals(sent.reasoning_effort, 'low');
+  assertEquals(sent.temperature, 0.3);
+  assertEquals((sent as { max_tokens?: number }).max_tokens, undefined);
+});
+
+Deno.test('GroqEmptyCompletionError is distinct from GroqRateLimitError', () => {
+  assert(new GroqEmptyCompletionError('x') instanceof Error);
+  assert(!(new GroqEmptyCompletionError('x') instanceof GroqRateLimitError));
 });

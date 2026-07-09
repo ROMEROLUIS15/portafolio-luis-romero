@@ -1,0 +1,8 @@
+{
+  "//": "Scopes the Edge Functions to Deno. Without this, Deno walks up to the root package.json, picks up the Node toolchain and fails to resolve npm:@types/node.",
+  "nodeModulesDir": "none",
+  "lock": false,
+  "tasks": {
+    "test": "deno test --allow-env --allow-net"
+  }
+}

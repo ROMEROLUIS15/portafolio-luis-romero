@@ -157,8 +157,10 @@ portafolio_lerh/
 ├── supabase/
 │   ├── functions/
 │   │   └── chat/
-│   │       ├── index.ts                # Edge Function — pipeline RAG completo
-│   │       ├── chat.test.ts            # Tests Deno PBT — Properties 1/3/4/5/6/7
+│   │       ├── index.ts                # Edge Function — wiring: env, clientes, orquestación
+│   │       ├── lib.ts                  # Lógica pura, sin efectos de módulo — lo que se testea
+│   │       ├── chat.test.ts            # Tests Deno — 31 unitarios + PBT sobre lib.ts
+│   │       ├── e2e.test.ts             # Tests Deno — 8 E2E contra el proyecto desplegado
 │   │       └── .env.example            # Variables de entorno para desarrollo local
 │   ├── migrations/
 │   │   ├── 001_create_documents.sql    # Tabla vector store + HNSW index + RLS
@@ -244,12 +246,26 @@ respuesta que no sea 200, para que un proyecto pausado se note.
 
 ### Testing
 
-| Herramienta | Alcance | Estado |
-|-------------|---------|--------|
-| Vitest + jsdom | Chat Widget — 18 tests (example + PBT) | verde |
+| Herramienta | Alcance | Tests |
+|-------------|---------|-------|
+| Vitest + jsdom | Chat Widget | 18 |
+| Deno test | Edge Function — unitarios + PBT sobre `lib.ts` | 31 |
+| pgTAP | SQL — RLS de las 4 tablas + `match_documents` | 13 |
+| Deno test | E2E contra el proyecto desplegado | 8 |
 | fast-check | Property-based testing en Widget y Edge Function | — |
-| Deno test | Edge Function — 8 property tests | ⚠️ no ejecutable, ver abajo |
-| pgTAP | SQL — RLS policies + `match_documents` | manual |
+
+```bash
+npm test          # widget
+npm run test:edge # edge function (unitarios)
+npm run test:db   # pgTAP — requiere `supabase start` (Docker)
+npm run test:e2e  # e2e — requiere SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+npm run test:all  # los tres primeros
+```
+
+La lógica pura de la Edge Function vive en `supabase/functions/chat/lib.ts`, sin
+efectos de módulo (no lee `Deno.env`, no crea clientes). `index.ts` la cablea al
+runtime y `chat.test.ts` importa **exactamente las mismas funciones** — nada se
+reimplementa del lado del test.
 
 ---
 
@@ -375,31 +391,44 @@ npm test
 ### Edge Function (Deno test)
 
 ```bash
-deno test --allow-env supabase/functions/chat/chat.test.ts
+npm run test:edge
 ```
 
-8 property tests — Properties 1, 3, 4, 5, 6, 7 (100 runs cada uno con fast-check).
+31 tests sobre `lib.ts`: validación de mensajes y tokens, umbral de recuperación,
+system prompt (idioma, anti-alucinación, prohibición de markdown), `stripMetaPrefix`,
+claves de caché, guard de origen y la cadena de fallback de Groq con `fetch` inyectado.
 
-> **⚠️ Deuda técnica conocida.** Ahora mismo el comando no arranca (`Could not find
-> a matching package for 'npm:@types/node'`), así que la suite lleva tiempo sin
-> ejecutarse. Y cuando se arregle seguirá sin proteger nada: `chat.test.ts` **no
-> importa** `index.ts`, sino que **reimplementa** `isValidMessage`,
-> `buildSystemPrompt`, `normalizeLang` y `sha256hex`. Las copias ya divergieron del
-> original — el test valida mensajes hasta 500 caracteres cuando el código real
-> permite 1000, y afirma sobre un system prompt que se reescribió por completo.
->
-> Son tests que pasan en verde mientras verifican código muerto. Antes de confiar
-> en ellos hay que extraer esas funciones puras a un módulo compartido e
-> importarlas desde ambos lados.
+`supabase/functions/deno.json` acota el proyecto a Deno; sin él, Deno sube al
+`package.json` raíz y falla al resolver `npm:@types/node`.
 
 ### SQL (pgTAP)
 
 ```bash
-# Requiere conexión a Supabase con pgTAP habilitado
-psql $DATABASE_URL -f supabase/tests/rls.test.sql
+supabase start     # requiere Docker
+npm run test:db
 ```
 
-6 assertions — RLS en `chat_logs` y `documents`, límites de `match_documents`.
+13 assertions. Cubre las cuatro tablas: `documents` (lectura pública, escritura
+denegada), `chat_logs`, `chat_cache` y `rate_limits` (las tres deny-all para `anon`),
+más los límites de `match_documents`.
+
+> Un `SELECT` bajo RLS deny-all **no lanza excepción**: devuelve cero filas. Los
+> tests lo afirman así, contando filas en vez de esperar un error.
+
+### E2E (Deno test contra el proyecto desplegado)
+
+```bash
+export SUPABASE_URL=... SUPABASE_SERVICE_ROLE_KEY=...
+npm run test:e2e
+```
+
+8 tests. Se saltan solos si faltan esas variables.
+
+> **Por qué no basta con comprobar `HTTP 200`.** El pipeline falla abierto: si la
+> `service_role` deja de ser válida, el rate limiting, la caché y el logging fallan
+> en silencio y la función sigue respondiendo `200`. Ocurrió en producción y no se
+> detectó. Por eso el E2E afirma que **aparece una fila nueva en `chat_logs`**, que
+> la respuesta no viene vacía y que no contiene markdown.
 
 ---
 

@@ -7,6 +7,10 @@
   "scripts": {
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:edge": "deno test --config supabase/functions/deno.json --allow-env --allow-net supabase/functions/chat/chat.test.ts",
+    "test:db": "supabase test db --local",
+    "test:e2e": "deno test --config supabase/functions/deno.json --allow-env --allow-net supabase/functions/chat/e2e.test.ts",
+    "test:all": "npm run test && npm run test:edge && npm run test:db",
     "ingest": "deno run --allow-read --allow-net --allow-env scripts/ingest.ts",
     "seed:availability": "deno run --allow-net --allow-env scripts/seed-availability.ts",
     "dedupe": "deno run --allow-net --allow-env scripts/dedupe-documents.ts",
