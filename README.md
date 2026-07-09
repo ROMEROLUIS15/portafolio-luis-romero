@@ -86,7 +86,7 @@ Edge Function (Deno)    ← Supabase, serverless, runs on Deno
   ├─ Vector search      ← match_documents() RPC, top-5, cosine similarity
   │   └─ Threshold 0.70 ← Si max(similarity) < 0.70 → fallback sin LLM
   ├─ System prompt      ← Instrucciones anti-alucinación + chunks contexto
-  ├─ Groq LLM           ← llama3-70b-8192, temp=0.3, max_tokens=512
+  ├─ Groq LLM           ← openai/gpt-oss-120b, temp=0.3, max_completion_tokens=1024
   ├─ Log (async)        ← SHA-256 del mensaje, nunca texto plano
   └─ Response           ← { answer: string, sources: string[] }
 ```
@@ -216,7 +216,7 @@ portafolio_lerh/
 | Edge Function | Deno / TypeScript (Supabase) — pipeline RAG custom |
 | Embeddings | Supabase `gte-small` — 384 dims (**gratis**) via `fetch` |
 | Vector DB | PostgreSQL + pgvector, índice HNSW |
-| LLM | Groq `llama3-70b-8192` — temp 0.3, via `fetch` (**gratis**) |
+| LLM | Groq `openai/gpt-oss-120b`, fallback `openai/gpt-oss-20b` — temp 0.3, via `fetch` (**gratis**) |
 | Rate limiting | PostgreSQL `rate_limits` — ventana deslizante 60s |
 | Logging | PostgreSQL `chat_logs` — SHA-256, RLS |
 | Ingesta | Deno script — `unpdf` + `@supabase/supabase-js` |

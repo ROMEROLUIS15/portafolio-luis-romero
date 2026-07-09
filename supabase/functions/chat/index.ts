@@ -72,11 +72,17 @@ const RATE_LIMIT_MAX         = 10;
 const RATE_LIMIT_WINDOW_S    = 60;
 const RAG_MATCH_COUNT        = 6;
 const MAX_CHUNK_CHARS        = 2100;  // safety bound; ingest chunks are ~1800-2000 chars
-const GROQ_MAX_TOKENS        = 400;
+// gpt-oss are reasoning models: reasoning tokens are billed against this budget
+// before any visible content is emitted, so it must leave room for both.
+const GROQ_MAX_TOKENS        = 1024;
+
+// gpt-oss only. Keeps the hidden chain-of-thought short so the token budget
+// above is spent on the answer rather than on reasoning.
+const GROQ_REASONING_EFFORT  = 'low';
 
 // Tried in order. Each Groq model has its own rate-limit bucket, so if the
 // primary is throttled we fall back to a second model on the same account.
-const GROQ_MODELS = ['llama-3.3-70b-versatile', 'llama-3.1-8b-instant'] as const;
+const GROQ_MODELS = ['openai/gpt-oss-120b', 'openai/gpt-oss-20b'] as const;
 
 const CACHE_TTL_DAYS = 7;
 
@@ -94,6 +100,9 @@ const BUSY_MESSAGE: Record<Lang, string> = {
 
 // Thrown when Groq returns 429 so the pipeline can degrade gracefully.
 class GroqRateLimitError extends Error {}
+
+// Thrown when a model answers with no visible content (reasoning ate the budget).
+class GroqEmptyCompletionError extends Error {}
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
 
@@ -329,8 +338,9 @@ async function callGroq(systemPrompt: string, userMessage: string, model: string
     },
     body: JSON.stringify({
       model,
-      temperature: 0.3,
-      max_tokens:  GROQ_MAX_TOKENS,
+      temperature:           0.3,
+      max_completion_tokens: GROQ_MAX_TOKENS,
+      reasoning_effort:      GROQ_REASONING_EFFORT,
       messages: [
         { role: 'system', content: systemPrompt },
         { role: 'user',   content: userMessage  },
@@ -347,13 +357,25 @@ async function callGroq(systemPrompt: string, userMessage: string, model: string
   }
 
   const data = await response.json();
-  return data.choices[0].message.content as string;
+  const content = (data.choices?.[0]?.message?.content ?? '').trim();
+
+  // A reasoning model can burn the whole token budget on its chain-of-thought
+  // and return empty content. Treat that as a failure of this model, not of the
+  // request, so the caller can retry on the next one.
+  if (content === '') {
+    throw new GroqEmptyCompletionError(
+      `Groq returned empty content (${model}, finish_reason=${data.choices?.[0]?.finish_reason})`,
+    );
+  }
+
+  return content;
 }
 
 /**
  * Calls Groq, trying each model in GROQ_MODELS in order. Each model has its own
- * rate-limit bucket, so a 429 on the primary falls through to the next. Only if
- * every model is rate-limited does GroqRateLimitError propagate.
+ * rate-limit bucket, so a 429 on the primary falls through to the next — as does
+ * an empty completion. Only if every model is rate-limited does
+ * GroqRateLimitError propagate.
  */
 async function callGroqWithFallback(systemPrompt: string, userMessage: string): Promise<string> {
   let lastRateLimit: GroqRateLimitError | null = null;
@@ -365,6 +387,10 @@ async function callGroqWithFallback(systemPrompt: string, userMessage: string): 
       if (err instanceof GroqRateLimitError) {
         console.warn('[chat]', err.message);
         lastRateLimit = err;
+        continue; // try the next model
+      }
+      if (err instanceof GroqEmptyCompletionError) {
+        console.warn('[chat]', err.message);
         continue; // try the next model
       }
       throw err;

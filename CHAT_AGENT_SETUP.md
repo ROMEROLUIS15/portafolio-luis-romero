@@ -134,7 +134,7 @@ Visitor clicks bubble
     → OpenAI: generates embedding of message
     → Supabase RPC: match_documents (pgvector cosine search)
     → If max similarity < 0.70: returns fallback (no LLM call)
-    → Groq llama3-70b-8192: generates answer from context chunks
+    → Groq openai/gpt-oss-120b: generates answer from context chunks
     → Logs SHA-256 hash to chat_logs (never plaintext)
     → Returns { answer, sources } to widget
   → Widget renders response with source chips
