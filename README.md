@@ -179,7 +179,8 @@ portafolio_lerh/
 │
 ├── .github/
 │   └── workflows/
-│       └── update-cronix-stats.yml     # Webhook desde repo Cronix → actualiza stats
+│       ├── update-cronix-stats.yml     # Webhook desde repo Cronix → actualiza stats
+│       └── supabase-keepalive.yml      # Ping diario — evita que el free tier se pause
 │
 ├── cronix-stats.json                   # Métricas en vivo de Cronix
 ├── .env.example                        # Plantilla de variables de entorno
@@ -226,15 +227,29 @@ portafolio_lerh/
 | Herramienta | Uso |
 |-------------|-----|
 | GitHub Actions | Webhook desde Cronix → actualiza `cronix-stats.json` |
+| GitHub Actions | Keep-alive diario contra Supabase (`supabase-keepalive.yml`) |
+
+El free tier de Supabase pausa un proyecto tras ~7 días sin actividad. Un proyecto
+pausado pierde su registro DNS y el widget falla con *"the agent is currently
+unavailable"* hasta restaurarlo a mano. El workflow ejecuta un `SELECT` trivial
+sobre `documents` cada día: la consulta tiene que llegar a Postgres para contar
+como actividad — la raíz de la API REST devuelve 401 y no sirve.
+
+Corre a diario, no semanalmente: GitHub retrasa los cron bajo carga y un intervalo
+de 7 días no deja margen para una ejecución perdida. Falla en rojo ante cualquier
+respuesta que no sea 200, para que un proyecto pausado se note.
+
+> GitHub desactiva los workflows programados en repos sin actividad durante 60
+> días. Si ocurre, se reactiva desde la pestaña Actions.
 
 ### Testing
 
-| Herramienta | Alcance |
-|-------------|---------|
-| Vitest + jsdom | Chat Widget — 18 tests (example + PBT) |
-| fast-check | Property-based testing en Widget y Edge Function |
-| Deno test | Edge Function — 8 property tests |
-| pgTAP | SQL — RLS policies + `match_documents` |
+| Herramienta | Alcance | Estado |
+|-------------|---------|--------|
+| Vitest + jsdom | Chat Widget — 18 tests (example + PBT) | verde |
+| fast-check | Property-based testing en Widget y Edge Function | — |
+| Deno test | Edge Function — 8 property tests | ⚠️ no ejecutable, ver abajo |
+| pgTAP | SQL — RLS policies + `match_documents` | manual |
 
 ---
 
@@ -288,14 +303,23 @@ Las 3 migraciones crean:
 
 ### 3. Secrets de la Edge Function
 
+Los valores viven en `.env` (ignorado por git). Nunca los escribas en un comando
+ni en un archivo versionado:
+
 ```bash
-supabase secrets set \
-  GROQ_API_KEY=gsk_... \
-  SUPABASE_URL=https://TU_PROJECT_REF.supabase.co \
-  SUPABASE_ANON_KEY=eyJ... \
-  SUPABASE_SERVICE_ROLE_KEY=eyJ... \
-  ALLOWED_ORIGINS=https://TU_DOMINIO.vercel.app
+cp .env.example .env      # y rellena tus claves
+
+supabase secrets set GROQ_API_KEY="$(grep '^GROQ_API_KEY=' .env | cut -d= -f2-)"
+supabase secrets set ALLOWED_ORIGINS="$(grep '^ALLOWED_ORIGINS=' .env | cut -d= -f2-)"
 ```
+
+Solo esos dos son secrets de usuario. `SUPABASE_URL`, `SUPABASE_ANON_KEY` y
+`SUPABASE_SERVICE_ROLE_KEY` las inyecta la plataforma automáticamente en las Edge
+Functions y **no se pueden definir a mano**: la API rechaza cualquier nombre con
+prefijo `SUPABASE_`. Al rotar esas claves, el valor nuevo se propaga solo.
+
+`setup.bat` y `run_ingest.bat` leen `.env` con el mismo criterio y abortan si
+falta alguna variable.
 
 ### 4. Deploy de la Edge Function
 
@@ -356,6 +380,18 @@ deno test --allow-env supabase/functions/chat/chat.test.ts
 
 8 property tests — Properties 1, 3, 4, 5, 6, 7 (100 runs cada uno con fast-check).
 
+> **⚠️ Deuda técnica conocida.** Ahora mismo el comando no arranca (`Could not find
+> a matching package for 'npm:@types/node'`), así que la suite lleva tiempo sin
+> ejecutarse. Y cuando se arregle seguirá sin proteger nada: `chat.test.ts` **no
+> importa** `index.ts`, sino que **reimplementa** `isValidMessage`,
+> `buildSystemPrompt`, `normalizeLang` y `sha256hex`. Las copias ya divergieron del
+> original — el test valida mensajes hasta 500 caracteres cuando el código real
+> permite 1000, y afirma sobre un system prompt que se reescribió por completo.
+>
+> Son tests que pasan en verde mientras verifican código muerto. Antes de confiar
+> en ellos hay que extraer esas funciones puras a un módulo compartido e
+> importarlas desde ambos lados.
+
 ### SQL (pgTAP)
 
 ```bash
@@ -364,6 +400,20 @@ psql $DATABASE_URL -f supabase/tests/rls.test.sql
 ```
 
 6 assertions — RLS en `chat_logs` y `documents`, límites de `match_documents`.
+
+---
+
+## GitHub Actions — Keep-alive de Supabase
+
+`.github/workflows/supabase-keepalive.yml` corre a diario (06:17 UTC) y hace un
+`SELECT id FROM documents LIMIT 1` vía PostgREST. Evita que el free tier pause el
+proyecto por inactividad.
+
+Requiere dos secrets de repositorio: `SUPABASE_URL` y `SUPABASE_ANON_KEY`. La clave
+anon es pública por diseño —va en el navegador, protegida por RLS— pero se mantiene
+fuera del YAML de todas formas.
+
+Se puede lanzar a mano desde la pestaña Actions (`workflow_dispatch`).
 
 ---
 
