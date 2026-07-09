@@ -1,0 +1,55 @@
+# ============================================================
+# SUPABASE KEEP-ALIVE
+# Supabase free-tier projects pause after ~7 days without activity.
+# A paused project loses its DNS record, so the chat widget fails with
+# "the agent is currently unavailable" until it's restored by hand.
+#
+# This runs a trivial SELECT against `documents` every day. The query has to
+# reach Postgres to count as activity — hitting the REST root is not enough.
+#
+# Required repository secrets:
+#   SUPABASE_URL       https://<ref>.supabase.co
+#   SUPABASE_ANON_KEY  the publishable/anon key (safe in the browser, still
+#                      kept out of this file)
+# ============================================================
+name: Supabase Keep-Alive
+
+on:
+  schedule:
+    # Daily at 06:17 UTC. Daily rather than weekly: GitHub delays cron jobs
+    # under load, and an offset minute avoids top-of-hour congestion. A 7-day
+    # interval would leave no room for a missed run.
+    - cron: '17 6 * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Ping Postgres via PostgREST
+        env:
+          SUPABASE_URL:      ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::SUPABASE_URL and SUPABASE_ANON_KEY must be set as repository secrets."
+            exit 1
+          fi
+
+          status=$(curl -sS -o /tmp/body -w '%{http_code}' --max-time 30 --retry 3 --retry-delay 10 \
+            "${SUPABASE_URL}/rest/v1/documents?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          if [ "${status}" != "200" ]; then
+            echo "::error::Keep-alive ping failed with HTTP ${status}. The project may be paused."
+            head -c 500 /tmp/body
+            exit 1
+          fi
+
+          echo "Project is awake (HTTP ${status})."
