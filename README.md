@@ -1,6 +1,6 @@
 # Luis Romero — AI Engineer & Backend Developer
 
-Portfolio personal de [Luis Romero](https://www.linkedin.com/in/luisromero15), AI Engineer y Backend Developer con base en Barranquilla, Colombia. Construido con HTML/CSS/JS vanilla — sin frameworks. Incluye un **agente conversacional RAG** embebido en producción, un terminal interactivo CLI, y estadísticas en vivo de [Cronix](https://cronix-app.vercel.app) sincronizadas automáticamente desde su repositorio via GitHub Actions.
+Portfolio personal de [Luis Romero](https://www.linkedin.com/in/luis-romero-dev15), AI Engineer y Backend Developer con base en Barranquilla, Colombia. Construido con HTML/CSS/JS vanilla — sin frameworks. Incluye un **agente conversacional RAG** embebido en producción, un terminal interactivo CLI, y estadísticas en vivo de [Cronix](https://cronix-app.vercel.app) sincronizadas automáticamente desde su repositorio via GitHub Actions.
 
 ---
 
@@ -534,6 +534,6 @@ Ver `.env.example` en la raíz para la lista completa. Para desarrollo local del
 **Luis Romero**  
 AI Engineer & Backend Developer  
 📧 lueduar15@gmail.com  
-💼 [LinkedIn](https://www.linkedin.com/in/luisromero15)  
+💼 [LinkedIn](https://www.linkedin.com/in/luis-romero-dev15)  
 🐙 [GitHub](https://github.com/ROMEROLUIS15)  
 💬 [WhatsApp](https://wa.me/573244926589)

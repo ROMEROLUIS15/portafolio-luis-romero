@@ -28,7 +28,7 @@ La terminal detecta el idioma automáticamente (`lang="en"` o `lang="es"`).
 
 ```
 open github     → https://github.com/ROMEROLUIS15
-open linkedin   → https://www.linkedin.com/in/luisromero15
+open linkedin   → https://www.linkedin.com/in/luis-romero-dev15
 open cronix     → https://cronix-app.vercel.app
 open whatsapp   → https://wa.me/573244926589
 ```
