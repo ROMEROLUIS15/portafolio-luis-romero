@@ -1,0 +1,76 @@
+# ============================================================
+# AGENT EVALUATION
+# Runs the end-to-end suite against the deployed chat function, including the
+# two LLM-as-judge checks that cannot run from Luis's machine: Groq answers
+# 403 "Access denied" to his VPN's exit IP, and the VPN is not optional for him.
+# A GitHub runner has an IP Groq accepts, so this is where those two live.
+#
+# Manual only. It spends Groq free-tier calls and writes rows to chat_logs, so
+# it should not fire on every push.
+#
+# Required repository secrets:
+#   SUPABASE_URL   https://<ref>.supabase.co
+#   GROQ_API_KEY   the same key the Edge Function uses
+#
+# SUPABASE_SERVICE_ROLE_KEY is intentionally NOT required. Without it the tests
+# that count chat_logs rows skip themselves, which keeps the most powerful key
+# in the project out of a public repository's secrets. Add it only if you want
+# the full suite here, and understand that trade-off first.
+# ============================================================
+name: Agent Evaluation
+
+on:
+  workflow_dispatch:
+
+jobs:
+  evaluate:
+    name: E2E + judge against production
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Deno
+        uses: denoland/setup-deno@v2
+        with:
+          deno-version: v2.x
+
+      - name: Confirm Groq is reachable from this runner
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${GROQ_API_KEY}" ]; then
+            echo "::error::GROQ_API_KEY is not set — add it under Settings > Secrets > Actions."
+            exit 1
+          fi
+          status=$(curl -sS -o /dev/null -w '%{http_code}' --max-time 30 \
+            https://api.groq.com/openai/v1/models \
+            -H "Authorization: Bearer ${GROQ_API_KEY}")
+          if [ "${status}" != "200" ]; then
+            echo "::error::Groq answered HTTP ${status} from this runner. If it is 403 the key or the region is blocked; if 401 the key is wrong."
+            exit 1
+          fi
+          echo "Groq reachable (HTTP ${status}) — the judge checks will run."
+
+      - name: Run the evaluation suite
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          CHAT_ORIGIN:  https://portafolio-luis-romero.vercel.app
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ]; then
+            echo "::error::SUPABASE_URL is not set — add it under Settings > Secrets > Actions."
+            exit 1
+          fi
+          deno test --config supabase/functions/deno.json --allow-env --allow-net \
+            supabase/functions/chat/e2e.test.ts
+
+      - name: What ran and what did not
+        if: always()
+        run: |
+          echo "Tests reported as 'ignored' are the ones needing SUPABASE_SERVICE_ROLE_KEY,"
+          echo "which this workflow deliberately does not carry. See the header of this file."
