@@ -16,9 +16,10 @@ the provider APIs.
 
 ```bash
 npm test                 # Widget tests — Vitest + jsdom + fast-check (18 tests)
-npm run test:edge        # Edge Function unit + property tests — Deno, over lib.ts (31 tests)
+npm run test:watch       # Same, in watch mode
+npm run test:edge        # Edge Function unit + property tests — Deno, over lib.ts (33 tests)
 npm run test:db          # pgTAP RLS tests — requires Docker + `supabase start` first
-npm run test:e2e         # E2E against the deployed project — needs SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY
+npm run test:e2e         # Agent evaluation against the deployed project (see below) — 15 tests
 npm run test:all         # test + test:edge + test:db
 
 npm run ingest           # Rebuild the vector store from the CV markdown + cronix-stats.json
@@ -71,9 +72,10 @@ Never reimplement logic inside a test file. An earlier version kept private copi
 asserting a system prompt that had since been rewritten) and passed while verifying dead code.
 
 **`lib.ts` constants are the source of truth**, not the README (whose numbers have gone stale): similarity
-threshold `0.75`, max message `1000` chars, `RAG_MATCH_COUNT` 6, Groq models `openai/gpt-oss-120b` →
-`openai/gpt-oss-20b`, cache TTL 7 days. (The widget's `errorInvalidMsg` copy still says "500 characters"
-while it actually enforces 1000 — cosmetic, but don't take it as the limit.)
+threshold `0.75`, max message `1000` chars, `RAG_MATCH_COUNT` 6, `MAX_CHUNK_CHARS` 2100, Groq models
+`openai/gpt-oss-120b` → `openai/gpt-oss-20b`, cache TTL 7 days. (Two stale copies say otherwise and are
+both wrong: the widget's `errorInvalidMsg` says "500 characters" while it enforces 1000, and
+`scripts/ingest.ts` still comments about a "1600-char cap" that is now 2100.)
 
 ### Request pipeline
 
@@ -108,6 +110,34 @@ unnoticed. This is why `e2e.test.ts` asserts that a **new row lands in `chat_log
 non-empty and that it contains no markdown — never just a status code. Preserve that property when touching
 the E2E tests.
 
+### Agent evaluation: `e2e.test.ts`
+
+This is the agent's eval suite, not a smoke test. It drives the **deployed** function and grades the whole
+pipeline — embedding, vector search, prompt, model — in four layers:
+
+- **Contract**: status codes, logging, cache-hit is faster and identical, origin guard, no markdown.
+- **Grounding** (the `GROUNDING` table): facts that have already gone stale once — current employer, start
+  date, LinkedIn URL, city, phone, newest client project, Cronix test count. What breaks is *retrieval*, not
+  the prompt: when Luis moved to Complexity, "where does he work?" kept answering with client projects
+  because `match_documents` never surfaced the right chunk. **When a CV fact changes, add or update a case
+  here** — a prompt-level evaluator would pass that bug.
+- **Availability**: see the product decision below. `declaresAvailability()` splits into sentences and drops
+  negated ones; a flat regex fails the *correct* answer, since it contains the same words.
+- **LLM-as-judge**: two cases only, for what a regex cannot decide (does the answer actually answer). Uses
+  `gpt-oss-20b` from the same free tier. Keep judge criteria single-clause — an "and ideally…" clause gets
+  enforced as a requirement and fails correct answers.
+
+Env vars, each gate skipping instead of failing: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` enable
+everything, `SUPABASE_URL` + `GROQ_API_KEY` (reachable) enable the judge, `CHAT_ORIGIN` overrides the origin.
+The suite self-throttles to ~9 req/min because the function allows 10 — it takes minutes, and removing the
+pacing turns the later cases into 429s that read as agent failures.
+
+**Groq answers 403 to Luis's VPN exit IP, and the VPN is not optional for him**, so the judge cases cannot run
+from his machine. `.github/workflows/agent-eval.yml` (manual `workflow_dispatch`) runs the suite from a GitHub
+runner for exactly that reason. It deliberately carries no `SUPABASE_SERVICE_ROLE_KEY` — the `chat_logs`
+tests skip themselves rather than put the most powerful key in a public repo's secrets. Tests reported as
+"ignored" there are that, not failures.
+
 ### Origin guard
 
 `isOriginAllowed` matches with anchored regexes on purpose: a bare `startsWith()` would admit
@@ -140,14 +170,29 @@ Both CV markdown files are **git-ignored** (`.gitignore:21-22`) because they car
 They exist only in the local working copy, so a fresh clone cannot run `npm run ingest`, and `git status`
 will never show changes to them — verify edits to them by reading the file, not through git.
 
-`ingest.ts` is idempotent: it deletes the existing rows for each source before inserting the new chunks
-(`scripts/ingest.ts:246`), so re-running it is safe and does not duplicate. `seed-availability.ts` behaves the
-same way. `npm run dedupe` exists because an earlier version of the ingest used plain INSERTs and left
-duplicates behind; it is a repair tool, not a required follow-up step.
+`ingest.ts` is idempotent: it deletes the existing rows for each source before inserting the new chunks, so
+re-running it is safe and does not duplicate. `seed-availability.ts` behaves the same way. `npm run dedupe`
+exists because an earlier version of the ingest used plain INSERTs and left duplicates behind; it is a repair
+tool, not a required follow-up step.
 
 Note that ingest only clears the sources it is about to write. Rows from other sources — currently
 `profile-availability`, inserted by `seed-availability.ts` — survive a re-ingest and must be maintained
 separately.
+
+### The agent must never declare availability
+
+Product decision, not an oversight. Luis is employed at Complexity and happy there: saying he is available
+reads to his employer as one foot out the door, saying he is not cools off anyone who might approach him. The
+`profile-availability` seed therefore states the situation and a contact channel, and qualifies nothing — no
+"open to new opportunities", no list of what he accepts. The model used to fill that silence on its own
+(answering "available" in Spanish and "not actively looking" in English the same day), which is what the two
+availability cases in `e2e.test.ts` guard. Don't "improve" the seed text with an availability clause.
+
+That seed also carries the **start date at Complexity (July 2026)** even though the date lives in the CV: the
+`profile-availability` chunk scores so high on employment questions that it pushed the CV's EXPERIENCE chunk
+out of the top 6 entirely, and the agent knew where he worked but not since when. Duplication there is
+load-bearing — a fact only reachable from a chunk that retrieval never returns is a fact the agent does not
+have.
 
 ### Frontend
 
@@ -160,7 +205,9 @@ Both pages inline `window.__CHAT_ENDPOINT__` and `window.__CHAT_ANON_KEY__` befo
 `assets/js/chat-widget.js`. The anon/publishable key is in the HTML by design — it's browser-facing and
 protected by RLS.
 
-`chat-widget.js` builds DOM through an `el()` factory and never uses `innerHTML`. Keep it that way.
+`chat-widget.js` builds DOM through an `el()` factory; every piece of text — answers included — goes in as
+`textContent`. The single `innerHTML` in the file is inside `svgIcon()`, fed only by literal SVG path strings
+(`chat-widget.js:161`). Keep that the only one: no user or model content near `innerHTML`.
 
 `cronix-stats.json` is generated: the `update-cronix-stats.yml` workflow rewrites and commits it on
 `repository_dispatch` from the Cronix repo. Don't hand-edit it expecting the change to survive.
@@ -208,6 +255,12 @@ Source files carry `Requirements: 3.x, 4.x` headers and tests carry `— Req 1.2
 point back into those documents. Preserve that traceability when editing, and consult the spec before
 changing agent behaviour — the correctness properties are what the property-based tests encode.
 
-The setup/troubleshooting docs (`CHAT_AGENT_SETUP.md`, `CONFIGURATION_CHECKLIST.md`, `PENDIENTE_SETUP.md`,
-`CRONIX_SETUP.md`, `TERMINAL_COMMANDS.md`) and the README are written in Spanish; code and code comments are
-in English.
+Code and code comments are in English. The prose docs are mixed: the README, `PENDIENTE_SETUP.md`,
+`INSTRUCCIONES_FINALES.md` and `TERMINAL_COMMANDS.md` are in Spanish; `CHAT_AGENT_SETUP.md`,
+`CONFIGURATION_CHECKLIST.md` and `CRONIX_SETUP.md` in English. Match the language of the file you are
+editing, and answer Luis in Spanish.
+
+The four setup docs (`CHAT_AGENT_SETUP.md`, `CONFIGURATION_CHECKLIST.md`, `PENDIENTE_SETUP.md`,
+`INSTRUCCIONES_FINALES.md`) describe a first-time provisioning that is long done and have drifted — e.g.
+`CHAT_AGENT_SETUP.md` still says "OpenAI embeddings" when the pipeline uses Supabase gte-small. Read them as
+history; trust `lib.ts`, `package.json` and this file over them wherever they disagree.
