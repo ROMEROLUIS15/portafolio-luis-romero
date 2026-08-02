@@ -140,9 +140,14 @@ Both CV markdown files are **git-ignored** (`.gitignore:21-22`) because they car
 They exist only in the local working copy, so a fresh clone cannot run `npm run ingest`, and `git status`
 will never show changes to them — verify edits to them by reading the file, not through git.
 
-`ingest.ts` uses plain INSERTs and is **not** idempotent: re-running it duplicates chunks, which wastes Groq
-tokens and dilutes retrieval. Follow it with `npm run dedupe`. `seed-availability.ts` is idempotent (deletes
-its own source rows first).
+`ingest.ts` is idempotent: it deletes the existing rows for each source before inserting the new chunks
+(`scripts/ingest.ts:246`), so re-running it is safe and does not duplicate. `seed-availability.ts` behaves the
+same way. `npm run dedupe` exists because an earlier version of the ingest used plain INSERTs and left
+duplicates behind; it is a repair tool, not a required follow-up step.
+
+Note that ingest only clears the sources it is about to write. Rows from other sources — currently
+`profile-availability`, inserted by `seed-availability.ts` — survive a re-ingest and must be maintained
+separately.
 
 ### Frontend
 
