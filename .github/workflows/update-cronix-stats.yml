@@ -39,7 +39,7 @@ on:
       tests_total:
         description: 'Total tests written'
         required: false
-        default: '1000'
+        default: '1600'
       last_commit_msg:
         description: 'Last commit message from Cronix'
         required: false
@@ -63,7 +63,7 @@ jobs:
           APPOINTMENTS="${{ github.event.client_payload.appointments_total || inputs.appointments_total || '251' }}"
           MONTHLY="${{ github.event.client_payload.appointments_this_month || inputs.appointments_this_month || '38' }}"
           TENANTS="${{ github.event.client_payload.active_tenants || inputs.active_tenants || '4' }}"
-          TESTS="${{ github.event.client_payload.tests_total || inputs.tests_total || '1000' }}"
+          TESTS="${{ github.event.client_payload.tests_total || inputs.tests_total || '1600' }}"
           COMMIT_MSG="${{ github.event.client_payload.last_commit_msg || inputs.last_commit_msg || 'Update' }}"
           COMMIT_TYPE="${{ github.event.client_payload.commit_type || 'feat' }}"
           VERSION="${{ github.event.client_payload.version || '1.0.0' }}"
