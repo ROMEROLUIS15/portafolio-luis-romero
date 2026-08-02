@@ -1,12 +1,20 @@
 # ============================================================
 # UPDATE CRONIX STATS
 # This workflow is triggered by a webhook FROM the Cronix repo.
-# In the Cronix repo, add a workflow that calls:
+#
+# The sending half lives in the Cronix repo and is NOT set up yet: nothing there
+# has ever posted this dispatch, which is why cronix-stats.json has not moved
+# since the manual run on 2026-06-20. To wire it up, add to a Cronix workflow:
+#
 #   curl -X POST \
 #     -H "Authorization: token ${{ secrets.PORTFOLIO_PAT }}" \
 #     -H "Accept: application/vnd.github.v3+json" \
-#     https://api.github.com/repos/ROMEROLUIS15/portafolio_lerh/dispatches \
+#     https://api.github.com/repos/ROMEROLUIS15/portafolio-luis-romero/dispatches \
 #     -d '{"event_type":"cronix-stats-update","client_payload":{...}}'
+#
+# The repo name matters: this comment used to say `portafolio_lerh`, which is the
+# local folder name, not the repository — that URL 404s. See the README for the
+# full payload and the PORTFOLIO_PAT secret it needs.
 # ============================================================
 name: Update Cronix Stats
 
