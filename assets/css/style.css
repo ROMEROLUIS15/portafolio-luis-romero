@@ -432,6 +432,12 @@ nav.scrolled {
   font-size: 17px; font-weight: 600;
   color: var(--text-primary);
 }
+/* Earlier title held at the same company, shown next to the current one */
+.role-prev {
+  font-family: 'Inter', sans-serif;
+  font-size: 14px; font-weight: 400;
+  color: var(--text-secondary);
+}
 .timeline-company { font-size: 14px; color: var(--accent); font-weight: 500; margin-top: 2px; }
 .timeline-date {
   font-size: 12px; color: var(--text-muted);
@@ -600,6 +606,66 @@ nav.scrolled {
 }
 .project-links a.btn-live:hover { background: var(--accent); color: #fff; transform: translateY(-1px); }
 
+/* ---- Generated cover, for projects with no screenshot yet ----
+   Stands in for the <img> so the grid keeps its rhythm. Replace the whole
+   .project-image block with a real <img> once a capture exists. */
+.project-image.is-generated {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: var(--bg-secondary);
+}
+.project-image.is-generated::before {
+  content: '';
+  position: absolute; inset: 0;
+  background: var(--accent);
+  opacity: 0.10;
+}
+.project-image.is-generated i    { position: relative; font-size: 44px; color: var(--accent); }
+.project-image.is-generated span {
+  position: relative;
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 12px; font-weight: 600;
+  letter-spacing: 0.1em; text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* ============================================
+   TECHNICAL CHALLENGES
+   Secondary showcase — take-home exercises, kept apart from the
+   production work above so the two don't compete.
+   ============================================ */
+.challenges-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 20px;
+}
+.challenge-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+}
+.challenge-card:hover {
+  transform: translateY(-4px);
+  border-color: var(--accent-glow);
+  box-shadow: var(--shadow-md);
+}
+.challenge-top   { display: flex; align-items: center; gap: 10px; }
+.challenge-top i { font-size: 20px; color: var(--accent); }
+.challenge-name {
+  font-family: 'Space Grotesk', sans-serif;
+  font-size: 17px; font-weight: 600;
+  color: var(--text-primary);
+}
+.challenge-desc { font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
+
 /* ============================================
    CONTACT SECTION
    ============================================ */
@@ -717,6 +783,11 @@ footer {
 .back-to-top.visible { opacity: 1; pointer-events: auto; }
 .back-to-top:hover { transform: translateY(-3px); }
 .back-to-top span { color: #fff; font-size: 20px; }
+
+/* Hidden on purpose. The markup and the scroll logic in main.js are intact —
+   this single rule is the only thing keeping the button off screen.
+   To bring it back, delete this rule. */
+.back-to-top { display: none; }
 
 /* ============================================
    RESPONSIVE

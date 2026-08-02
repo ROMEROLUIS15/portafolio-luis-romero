@@ -31,7 +31,7 @@ window.addEventListener('scroll', () => {
   const menu = document.getElementById('myNavMenu');
   if (menu) menu.classList.toggle('nav-scrolled', isScrolled);
 
-  // back-to-top visibility
+  // back-to-top visibility (button is hidden via CSS for now; logic kept intact)
   const btt = document.getElementById('backToTop');
   if (btt) {
     btt.classList.toggle('visible', window.scrollY > 400);
