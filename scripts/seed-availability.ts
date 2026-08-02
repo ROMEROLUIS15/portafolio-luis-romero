@@ -1,11 +1,18 @@
 /**
- * Seed script — Luis Romero's work availability fact
- * Inserts an explicit, authoritative availability statement (ES + EN) into the
- * `documents` vector store so the agent answers "is he looking for a job?"
- * accurately instead of inferring/hallucinating.
+ * Seed script — Luis Romero's professional situation
+ * Inserts an explicit, authoritative statement (ES + EN) into the `documents`
+ * vector store so the agent answers "where does he work?" / "is he available?"
+ * from fact instead of inferring it from the CV chunks.
+ *
+ * Deliberately states no availability and lists no reasons to get in touch.
+ * Luis is employed at Complexity and happy there; any phrasing like "open to
+ * new opportunities" or an enumeration of what he accepts (a project, a role)
+ * reads to his current employer as one foot out the door. A contact channel in
+ * a portfolio is already an open door — nobody needs permission to send an
+ * offer — so the text gives the channel and qualifies nothing.
  *
  * Idempotent: deletes any prior rows for this source before inserting, so it is
- * safe to re-run and never duplicates rows (unlike the bulk ingest).
+ * safe to re-run and never duplicates rows.
  *
  * Usage:
  *   deno run --allow-net --allow-env scripts/seed-availability.ts
@@ -31,15 +38,19 @@ if (missing.length > 0) {
 
 const CONTENT: Record<'es' | 'en', string> = {
   es:
-    'Disponibilidad laboral de Luis Romero. Sí, Luis está abierto a nuevas oportunidades y disponible para comenzar de inmediato. ' +
-    'Busca tanto empleo de tiempo completo (full-time) como AI Engineer o Backend Developer, como proyectos freelance o por contrato. ' +
-    'Trabaja de forma remota y está abierto a reubicarse para la posición correcta, incluso a otro país (reubicación internacional). ' +
-    'Para conversar sobre oportunidades de trabajo, contrataciones, vacantes o colaboraciones, puedes escribirle a lueduar15@gmail.com.',
+    'Situación profesional de Luis Romero. Trabaja como Backend Developer en Complexity ' +
+    '(Texas, Estados Unidos, remoto), un equipo con el que está comprometido y donde disfruta lo que hace. ' +
+    'Su terreno es el desarrollo backend y la integración de IA en producción. ' +
+    'Luis no publica información sobre su disponibilidad ni sobre si busca otro trabajo; ' +
+    'cualquier propuesta o consulta la conversa directamente con quien se la plantea. ' +
+    'Si quieres escribirle, puedes hacerlo a lueduar15@gmail.com o por WhatsApp al +58 424 709 2980.',
   en:
-    "Luis Romero's work availability. Yes, Luis is open to new opportunities and available to start right away. " +
-    'He is looking for both full-time employment as an AI Engineer or Backend Developer and freelance or contract projects. ' +
-    'He works remotely and is open to relocating for the right role, including to another country (international relocation). ' +
-    'To discuss job opportunities, hiring, open roles, or collaborations, reach him at lueduar15@gmail.com.',
+    "Luis Romero's professional situation. He works as a Backend Developer at Complexity " +
+    '(Texas, United States, remote), a team he is committed to and where he enjoys the work. ' +
+    'His ground is backend development and shipping AI to production. ' +
+    'Luis does not publish information about his availability or about whether he is looking for other work; ' +
+    'any proposal or enquiry is discussed directly with whoever raises it. ' +
+    'To write to him: lueduar15@gmail.com or WhatsApp +58 424 709 2980.',
 };
 
 async function embed(text: string): Promise<number[]> {
