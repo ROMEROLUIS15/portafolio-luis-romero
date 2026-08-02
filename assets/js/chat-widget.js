@@ -185,7 +185,18 @@
   // ─── Widget construction ───────────────────────────────────────────────────
 
   function buildBubble() {
-    const iconChat  = svgIcon('<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>');
+    // Robot head: antenna, screen-like face with two eyes, and side ears.
+    // Reads as "AI assistant" at a glance, which a plain speech bubble did not.
+    const iconChat  = svgIcon(
+      '<path d="M12 6V3.5"></path>' +
+      '<circle cx="12" cy="2.5" r="1.2"></circle>' +
+      '<rect x="4" y="6" width="16" height="12" rx="3"></rect>' +
+      '<path d="M2 11v3M22 11v3"></path>' +
+      // Eyes filled, not stroked: a 2px outline on a 1.3 radius reads as a blob.
+      '<circle cx="9" cy="11.5" r="1.3" fill="currentColor" stroke="none"></circle>' +
+      '<circle cx="15" cy="11.5" r="1.3" fill="currentColor" stroke="none"></circle>' +
+      '<path d="M9.5 14.8h5"></path>'
+    );
     const iconClose = svgIcon('<line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line>');
     iconChat.classList.add('cw-bubble-icon', 'cw-bubble-icon--chat');
     iconClose.classList.add('cw-bubble-icon', 'cw-bubble-icon--close');
