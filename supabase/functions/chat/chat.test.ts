@@ -29,6 +29,7 @@ import {
   GroqEmptyCompletionError,
   GroqRateLimitError,
   MAX_MESSAGE_LENGTH,
+  META_PREFIXES,
   SIMILARITY_THRESHOLD,
   buildAllowedOrigins,
   buildCorsHeaders,
@@ -232,9 +233,50 @@ Deno.test('stripMetaPrefix — leaves clean answers untouched', () => {
     'Luis Romero es AI Engineer.',
     'Segunda opción: usar Redis.',   // "Segun" is a prefix of "Segunda" — must not match
     'According to Luis, Deno is great.', // "According to Luis" is not a meta lead-in
+    // Regression: recapitalisation used to run even when nothing was stripped,
+    // so an answer that is just a link came back as "Linkedin.com/…".
+    'linkedin.com/in/luis-romero-dev-back15',
+    'lueduar15@gmail.com es su correo.',
+    'pgvector con índice HNSW.',
   ]) {
     assertEquals(stripMetaPrefix(clean), clean, `mangled: ${clean}`);
   }
+});
+
+Deno.test('stripMetaPrefix — a stripped lead-in never recapitalises a link or email', () => {
+  const cases: Array<[string, string]> = [
+    [
+      'Según la información proporcionada, lueduar15@gmail.com es su correo.',
+      'lueduar15@gmail.com es su correo.',
+    ],
+    [
+      'Based on the provided context, linkedin.com/in/luis-romero-dev-back15 is his profile.',
+      'linkedin.com/in/luis-romero-dev-back15 is his profile.',
+    ],
+    [
+      'According to the information, https://cronix-app.vercel.app is the demo.',
+      'https://cronix-app.vercel.app is the demo.',
+    ],
+  ];
+  for (const [input, expected] of cases) {
+    assertEquals(stripMetaPrefix(input), expected, `failed on: ${input}`);
+  }
+});
+
+Deno.test('stripMetaPrefix — an answer with no lead-in is returned verbatim', () => {
+  fc.assert(
+    fc.property(fc.string(), (s) => {
+      const out = stripMetaPrefix(s);
+      // Nothing to strip ⇒ the only permitted change is dropping leading blanks.
+      if (out !== s.trimStart()) {
+        assert(
+          META_PREFIXES.some((re) => re.test(s.trimStart())),
+          `mutated an answer that had no meta lead-in: ${JSON.stringify(s)}`,
+        );
+      }
+    }),
+    { numRuns: 200 }
+  );
 });
 
 Deno.test('stripMetaPrefix — never returns an empty string', () => {

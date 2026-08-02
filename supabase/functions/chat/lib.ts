@@ -196,15 +196,44 @@ export const META_PREFIXES: RegExp[] = [
   /^from the (data|information|context)( provided| given| available)?[^,.:;]*[,:;.]?\s+/i,
 ];
 
+/**
+ * True when the first token is a value whose exact case is meaningful — an
+ * email, a URL, or a bare domain. Those are meant to be copied verbatim, so
+ * recapitalising them would corrupt what the visitor reads.
+ */
+function startsWithCaseSensitiveToken(text: string): boolean {
+  const token = text.split(/\s/, 1)[0] ?? '';
+  return (
+    token.includes('@') ||
+    token.includes('://') ||
+    /^[a-z0-9-]+(?:\.[a-z0-9-]+)+/i.test(token) // bare domain: linkedin.com/in/…
+  );
+}
+
 export function stripMetaPrefix(text: string): string {
-  let out = text.trimStart();
+  const trimmed = text.trimStart();
+
+  let stripped = trimmed;
   for (const re of META_PREFIXES) {
-    if (re.test(out)) {
-      out = out.replace(re, '');
+    if (re.test(stripped)) {
+      stripped = stripped.replace(re, '');
       break;
     }
   }
-  return out.length > 0 ? out.charAt(0).toUpperCase() + out.slice(1) : text;
+
+  // No lead-in was removed, so the answer already starts where the model meant
+  // it to. Recapitalising here is not a fix, it's damage: it used to rewrite an
+  // answer of "linkedin.com/in/…" into "Linkedin.com/in/…".
+  if (stripped === trimmed) return trimmed;
+
+  // Stripping consumed everything — keep the original rather than return empty.
+  if (stripped.length === 0) return text;
+
+  // Removing the lead-in exposes what was a mid-sentence lowercase word, so the
+  // capital has to be restored — except where case carries meaning.
+  return startsWithCaseSensitiveToken(stripped)
+    ? stripped
+    : stripped.charAt(0).toUpperCase() + stripped.slice(1);
 }
 
 // ─── SHA-256 ──────────────────────────────────────────────────────────────────
