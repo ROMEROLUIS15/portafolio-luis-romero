@@ -78,7 +78,7 @@ jobs:
                 "appointments_total":    251,
                 "appointments_this_month": 38,
                 "active_tenants":        4,
-                "tests_total":           1000,
+                "tests_total":           1600,
                 "version":               "${{ steps.info.outputs.version }}",
                 "last_commit_msg":       "${{ steps.info.outputs.msg }}",
                 "commit_type":           "${{ steps.info.outputs.type }}"

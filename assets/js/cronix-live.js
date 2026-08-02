@@ -376,10 +376,10 @@
         // Fallback: render with hardcoded defaults
         renderMetrics({
           appointments_total: 251, appointments_this_month: 38,
-          active_tenants: 4, tests_total: 1000,
+          active_tenants: 4, tests_total: 1600,
           rls_policies: 59, rls_tables: 32,
           edge_functions: 9, anti_hallucination_layers: 6,
-          anti_hallucination_mechanisms: 13, ci_checks: 138,
+          anti_hallucination_mechanisms: 13, ci_checks: 147,
           uptime_pct: 99.8, last_updated: new Date().toISOString(),
           last_commit_msg: 'Production release',
         });
