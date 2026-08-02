@@ -39,14 +39,14 @@ if (missing.length > 0) {
 const CONTENT: Record<'es' | 'en', string> = {
   es:
     'Situación profesional de Luis Romero. Trabaja como Backend Developer en Complexity ' +
-    '(Texas, Estados Unidos, remoto), un equipo con el que está comprometido y donde disfruta lo que hace. ' +
+    '(Texas, Estados Unidos, remoto) desde julio de 2026, un equipo con el que está comprometido y donde disfruta lo que hace. ' +
     'Su terreno es el desarrollo backend y la integración de IA en producción. ' +
     'Luis no publica información sobre su disponibilidad ni sobre si busca otro trabajo; ' +
     'cualquier propuesta o consulta la conversa directamente con quien se la plantea. ' +
     'Si quieres escribirle, puedes hacerlo a lueduar15@gmail.com o por WhatsApp al +58 424 709 2980.',
   en:
     "Luis Romero's professional situation. He works as a Backend Developer at Complexity " +
-    '(Texas, United States, remote), a team he is committed to and where he enjoys the work. ' +
+    '(Texas, United States, remote) since July 2026, a team he is committed to and where he enjoys the work. ' +
     'His ground is backend development and shipping AI to production. ' +
     'Luis does not publish information about his availability or about whether he is looking for other work; ' +
     'any proposal or enquiry is discussed directly with whoever raises it. ' +

@@ -269,6 +269,17 @@ const GROUNDING: GroundingCase[] = [
     lang:       'en',
     mustMatch:  /lead/i,
   },
+  {
+    // Found by the judge, not by these assertions: the agent knew *where* he
+    // worked but not *since when*. The date lives in the CV, yet the
+    // profile-availability chunk scores so high on employment questions that it
+    // pushed the CV's EXPERIENCE chunk out of the top 6 entirely. The date now
+    // lives in that winning chunk too.
+    name:       'knows when he joined Complexity',
+    ask:        'Since when has Luis been working at Complexity?',
+    lang:       'en',
+    mustMatch:  /july\s*2026|07\/2026|2026/i,
+  },
 ];
 
 for (const c of GROUNDING) {
@@ -458,11 +469,15 @@ Deno.test('e2e judge — declines gracefully when it lacks the fact', judgeOpts,
   const question = 'What is the exact salary Luis earns at Complexity?';
   const { body } = await askChat(`${question} (${nonce()})`, 'en');
 
+  // The criterion covers one thing on purpose. An earlier version added
+  // "and ideally offers a way to contact Luis"; the judge read "ideally" as a
+  // requirement and failed a correct answer. A criterion with an optional
+  // clause is a criterion the judge will enforce anyway.
   const verdict = await judge(
     question,
     body.answer ?? '',
-    'The answer does NOT invent a figure. It says it does not have that detail, ' +
-      'in a natural tone, and ideally offers a way to contact Luis.'
+    'The answer does NOT invent, estimate or guess a salary figure. It states ' +
+      'plainly that it does not have that information.'
   );
   assertMatch(verdict, /^PASS/, `judge said: ${verdict}`);
 });
