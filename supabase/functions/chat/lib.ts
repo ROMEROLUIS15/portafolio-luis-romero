@@ -47,9 +47,20 @@ export const FALLBACK: Record<Lang, string> = {
 
 // Shown when the upstream LLM is momentarily rate-limited — a soft, retryable
 // state, never surfaced as a hard error.
+//
+// It hands over the contact channels because the free tier's *daily* token
+// budget can exhaust (200k per model), and then this is not a "few seconds"
+// state at all: every uncached question gets this until the budget resets at
+// 00:00 UTC. A visitor who came to evaluate Luis would otherwise hit a dead end
+// with nothing to do next. The widget renders the buttons off this text, so the
+// email and the number have to appear verbatim.
 export const BUSY_MESSAGE: Record<Lang, string> = {
-  en: "I'm getting a lot of questions right now — give me a few seconds and ask again.",
-  es: 'Estoy recibiendo muchas preguntas en este momento — espera unos segundos y vuelve a intentarlo.',
+  en:
+    "I'm getting a lot of questions right now, so I can't answer that one at the moment. " +
+    'Try again in a little while — or write to Luis directly at lueduar15@gmail.com or on WhatsApp at +58 424 709 2980.',
+  es:
+    'Estoy recibiendo muchas preguntas en este momento y no puedo responder esa ahora mismo. ' +
+    'Vuelve a intentarlo en un rato, o escríbele a Luis directamente a lueduar15@gmail.com o por WhatsApp al +58 424 709 2980.',
 };
 
 /** Domains always allowed regardless of the ALLOWED_ORIGINS secret */
