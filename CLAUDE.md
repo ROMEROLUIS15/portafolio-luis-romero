@@ -15,7 +15,7 @@ the provider APIs.
 ## Commands
 
 ```bash
-npm test                 # Widget tests — Vitest + jsdom + fast-check (18 tests)
+npm test                 # Widget tests — Vitest + jsdom + fast-check (27 tests)
 npm run test:watch       # Same, in watch mode
 npm run test:edge        # Edge Function unit + property tests — Deno, over lib.ts (33 tests)
 npm run test:db          # pgTAP RLS tests — requires Docker + `supabase start` first
@@ -205,12 +205,49 @@ Both pages inline `window.__CHAT_ENDPOINT__` and `window.__CHAT_ANON_KEY__` befo
 `assets/js/chat-widget.js`. The anon/publishable key is in the HTML by design — it's browser-facing and
 protected by RLS.
 
+An answer that hands out a contact channel grows a WhatsApp and/or an email button underneath it, built in
+`renderMessage`. The detection is client-side and deterministic, and the split matters: **the model's text
+decides only whether a button appears, never where it points**. Both hrefs come from the `CONTACT` constant
+in `chat-widget.js` (`mailto:` and `wa.me/584247092980`), so nothing parsed out of an answer ever reaches an
+href. The phone is matched on digits alone, which is why any spacing or dashes the model picks still resolve.
+
+Two decisions there that look arbitrary and are not. **Error messages are excluded**: the widget's own
+fallback copy contains `lueduar15@gmail.com`, so a plain text match would turn every outage into a contact
+card. And the buttons are *added under* the answer rather than replacing the address in it, so a detection
+miss degrades to the old behaviour instead of leaving a sentence with a hole in it. `mailto:` over a Gmail
+compose URL, to hand off to whatever mail client the visitor already uses.
+
 `chat-widget.js` builds DOM through an `el()` factory; every piece of text — answers included — goes in as
 `textContent`. The single `innerHTML` in the file is inside `svgIcon()`, fed only by literal SVG path strings
 (`chat-widget.js:161`). Keep that the only one: no user or model content near `innerHTML`.
 
 `cronix-stats.json` is generated: the `update-cronix-stats.yml` workflow rewrites and commits it on
 `repository_dispatch` from the Cronix repo. Don't hand-edit it expecting the change to survive.
+
+### Responsive, and why you cannot eyeball it
+
+`html` and `body` carry `overflow-x: hidden` (`style.css:53`, `:59`). **A horizontal overflow therefore never
+shows up as a scrollbar — it shows up as content clipped off the right edge with no way to reach it**, and
+only on the narrow phones nobody tests on. Both instances found so far were invisible at 360px and up: a
+`minmax(320px, 1fr)` grid floor wider than the viewport, and a 38-character LinkedIn URL with no break
+opportunity setting the min-content width of its whole column. The fixes are the general ones —
+`minmax(min(320px, 100%), 1fr)`, and `min-width: 0` plus `overflow-wrap: anywhere` on the long value.
+
+To measure rather than guess, three traps, all of which produced a wrong answer here first:
+
+- **Chrome headless clamps its window at ~500px**, so `--window-size=320` renders ~498px wide and then crops
+  the screenshot to 320 — which looks exactly like a layout that overflows. Render the page in an `<iframe>`
+  of the exact width instead (media queries honour it) and compare `documentElement.scrollWidth` against
+  `clientWidth`.
+- **Everything starts at `opacity: 0`** until the `IntersectionObserver` in `main.js` adds `.visible`, so a
+  screenshot of an untouched page is a black rectangle. Neutralise `.reveal`/`.reveal-left`/`.reveal-right`,
+  and `scroll-behavior: smooth` too — it eats the jump to a `#section` before the capture.
+- **A rotating element reports a bounding box wider than it paints** (`.image-ring`), so a per-element audit
+  will report a 2–3px overflow that does not exist. `scrollWidth` is the honest signal.
+
+The two pages being full copies makes divergence easy to miss by reading. Diffing every `class` attribute
+across `index.html` and `spanish/index.html` catches it in one shot; that is how the Spanish contact card
+turned out to be the only one in the file using `contact-info` where the English uses `contact-detail`.
 
 ## Secrets
 
