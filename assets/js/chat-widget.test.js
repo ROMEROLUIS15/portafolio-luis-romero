@@ -364,3 +364,122 @@ describe('Property 13 — Lang transmitted at exact send moment', () => {
     );
   }, 30000);
 });
+
+// ─── Contact shortcuts ────────────────────────────────────────────────────────
+// When an answer hands out a contact channel, a WhatsApp / email button appears
+// under it. The answer text itself is never rewritten: the buttons are an
+// addition, so a detection miss degrades to exactly today's behaviour.
+
+const getContactBtns = () =>
+  document.querySelectorAll('.cw-msg--assistant .cw-contact-btn');
+
+/** Drives a full send and resolves once the mocked answer has been rendered. */
+async function sendAndRender(answer, { lang = 'en', ok = true, waitMs = 80 } = {}) {
+  loadWidget(lang);
+  vi.spyOn(global, 'fetch').mockResolvedValue({
+    ok, status: ok ? 200 : 500,
+    json: () => Promise.resolve({ answer, sources: [] }),
+  });
+
+  clickBubble();
+  getInput().value = 'How do I reach Luis?';
+  getSendBtn()?.click();
+  await new Promise(r => setTimeout(r, waitMs));
+}
+
+describe('Chat Widget — contact shortcuts', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  it('renders a mailto button when the answer gives the email', async () => {
+    await sendAndRender('You can write to him at lueduar15@gmail.com.');
+
+    const btns = getContactBtns();
+    expect(btns.length).toBe(1);
+    expect(btns[0].getAttribute('href')).toBe('mailto:lueduar15@gmail.com');
+  });
+
+  it('renders a wa.me button when the answer gives the phone number', async () => {
+    await sendAndRender('Escríbele por WhatsApp al +58 424 709 2980.', { lang: 'es' });
+
+    const btns = getContactBtns();
+    expect(btns.length).toBe(1);
+    expect(btns[0].getAttribute('href')).toBe('https://wa.me/584247092980');
+    expect(btns[0].getAttribute('rel')).toBe('noopener noreferrer');
+  });
+
+  it('renders both, in order, when the answer gives both', async () => {
+    await sendAndRender(
+      'Puedes escribirle a lueduar15@gmail.com o por WhatsApp al +58 424-709-2980.',
+      { lang: 'es' }
+    );
+
+    const btns = getContactBtns();
+    expect(btns.length).toBe(2);
+    expect(btns[0].getAttribute('href')).toBe('https://wa.me/584247092980');
+    expect(btns[1].getAttribute('href')).toBe('mailto:lueduar15@gmail.com');
+  });
+
+  it('leaves the answer text exactly as received', async () => {
+    const answer = 'Escríbele a lueduar15@gmail.com o al +58 424 709 2980.';
+    await sendAndRender(answer, { lang: 'es' });
+
+    const bubbles = document.querySelectorAll('.cw-msg--assistant .cw-msg-bubble');
+    expect(bubbles[bubbles.length - 1].textContent).toBe(answer);
+  });
+
+  it('adds nothing to an answer that hands out no channel', async () => {
+    await sendAndRender('Luis works as a Backend Developer at Complexity.');
+    expect(getContactBtns().length).toBe(0);
+    expect(document.querySelector('.cw-contact-actions')).toBeNull();
+  });
+
+  it('never decorates an error message, whose fallback copy carries the email', async () => {
+    // The widget's own error copy contains lueduar15@gmail.com. A naive
+    // text match would turn every outage into a contact card.
+    // The fallback only lands after both retries (1s + 2s), hence the wait.
+    await sendAndRender('irrelevant', { ok: false, waitMs: 3600 });
+
+    const errMsgs = document.querySelectorAll('.cw-msg--error');
+    expect(errMsgs.length).toBeGreaterThan(0);
+    expect(errMsgs[0].textContent).toContain('lueduar15@gmail.com');
+    expect(document.querySelector('.cw-contact-actions')).toBeNull();
+  });
+
+  it('labels the buttons in the language of the page', async () => {
+    await sendAndRender('Write to lueduar15@gmail.com', { lang: 'es' });
+    expect(getContactBtns()[0].textContent).toContain('Correo');
+
+    await sendAndRender('Write to lueduar15@gmail.com', { lang: 'en' });
+    expect(getContactBtns()[0].textContent).toContain('Email');
+  });
+
+  it('PBT: the number is matched whatever separators the model chooses', async () => {
+    await fc.assert(
+      fc.asyncProperty(
+        fc.array(fc.constantFrom(' ', '-', '.', ''), { minLength: 3, maxLength: 3 }),
+        fc.constantFrom('+58 ', '+58', '58 ', ''),
+        async (seps, prefix) => {
+          const number = `${prefix}424${seps[0]}709${seps[1]}2980${seps[2]}`;
+          await sendAndRender(`Su WhatsApp es ${number}.`, { lang: 'es' });
+
+          const hrefs = Array.from(getContactBtns()).map(b => b.getAttribute('href'));
+          expect(hrefs).toContain('https://wa.me/584247092980');
+          vi.restoreAllMocks();
+        }
+      ),
+      { numRuns: 25 }
+    );
+  }, 30000);
+
+  it('PBT: text without either channel never grows a button', async () => {
+    await fc.assert(
+      fc.asyncProperty(fc.string({ minLength: 1, maxLength: 120 }), async (raw) => {
+        const answer = raw.replace(/\d/g, 'x').replace(/@/g, ' at ');
+        await sendAndRender(answer);
+        expect(document.querySelector('.cw-contact-actions')).toBeNull();
+        vi.restoreAllMocks();
+      }),
+      { numRuns: 25 }
+    );
+  }, 30000);
+});

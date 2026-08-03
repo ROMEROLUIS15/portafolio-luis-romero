@@ -27,6 +27,23 @@
     retryDelaysMs:     [1000, 2000],
   });
 
+  /**
+   * Luis's canonical contact channels. The buttons always link to these values,
+   * never to anything parsed out of the answer — the model's text only decides
+   * *whether* a button appears, never where it points.
+   * @readonly
+   */
+  const CONTACT = Object.freeze({
+    email:        'lueduar15@gmail.com',
+    whatsappDigits: '584247092980',
+  });
+
+  /** Tolerant of the spacing the model may introduce around the address. */
+  const EMAIL_RE = /lueduar15\s*@\s*gmail\s*\.\s*com/i;
+
+  /** The local part of the WhatsApp number, matched on digits only. */
+  const PHONE_DIGITS = '4247092980';
+
   // ─── i18n ──────────────────────────────────────────────────────────────────
 
   /** @type {Record<'en'|'es', Record<string, string | Function | string[]>>} */
@@ -46,6 +63,10 @@
       rateLimitMsg:    (secs) => `Too many requests. Please wait ${secs}s.`,
       errorInvalidMsg: 'Invalid message. Please keep it under 500 characters.',
       sendAriaLabel:   'Send message',
+      waLabel:         'WhatsApp',
+      waAria:          'Message Luis on WhatsApp',
+      mailLabel:       'Email',
+      mailAria:        'Write to Luis by email',
     },
     es: {
       headerName:      'Asistente IA de Luis',
@@ -62,6 +83,10 @@
       rateLimitMsg:    (secs) => `Demasiadas solicitudes. Por favor espera ${secs}s.`,
       errorInvalidMsg: 'Mensaje inválido. Mantenlo bajo 500 caracteres.',
       sendAriaLabel:   'Enviar mensaje',
+      waLabel:         'WhatsApp',
+      waAria:          'Escribir a Luis por WhatsApp',
+      mailLabel:       'Correo',
+      mailAria:        'Escribir a Luis por correo',
     },
   });
 
@@ -338,6 +363,71 @@
     return msg;
   }
 
+  // ─── Contact shortcuts ─────────────────────────────────────────────────────
+  // When an answer hands out a contact channel, the visitor should not have to
+  // copy an address or a phone number by hand on a phone. The answer text is
+  // left exactly as it is — the buttons are added underneath it, so a detection
+  // miss costs nothing and the data stays selectable.
+
+  /** Digits only, so any spacing or dashes the model chose still match. */
+  function mentionsWhatsApp(text) {
+    return text.replace(/\D/g, '').includes(PHONE_DIGITS);
+  }
+
+  function mentionsEmail(text) {
+    return EMAIL_RE.test(text);
+  }
+
+  function contactLink(href, iconMarkup, label, ariaLabel, extraAttrs = {}) {
+    return el(
+      'a',
+      {
+        className:    'cw-contact-btn',
+        href,
+        'aria-label': ariaLabel,
+        ...extraAttrs,
+      },
+      svgIcon(iconMarkup),
+      el('span', { textContent: label })
+    );
+  }
+
+  /**
+   * Row of contact buttons for an answer, or null when it hands out no channel.
+   * @param {string} text
+   * @returns {HTMLElement|null}
+   */
+  function buildContactActions(text) {
+    const wantsWhatsApp = mentionsWhatsApp(text);
+    const wantsEmail    = mentionsEmail(text);
+    if (!wantsWhatsApp && !wantsEmail) return null;
+
+    const row = el('div', { className: 'cw-contact-actions' });
+
+    if (wantsWhatsApp) {
+      row.appendChild(contactLink(
+        `https://wa.me/${CONTACT.whatsappDigits}`,
+        '<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path>',
+        t('waLabel'),
+        t('waAria'),
+        { target: '_blank', rel: 'noopener noreferrer' }
+      ));
+    }
+
+    if (wantsEmail) {
+      // mailto: on purpose — it hands off to whatever mail client the visitor
+      // already uses instead of assuming Gmail in a browser.
+      row.appendChild(contactLink(
+        `mailto:${CONTACT.email}`,
+        '<path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline>',
+        t('mailLabel'),
+        t('mailAria')
+      ));
+    }
+
+    return row;
+  }
+
   function renderMessage(msg) {
     dom.typing?.remove();
     dom.typing = null;
@@ -347,8 +437,14 @@
       : msg.error         ? 'cw-msg--error'
       :                     'cw-msg--assistant';
 
+    // Only a real answer offers shortcuts: never the visitor's own message, and
+    // never an error, whose fallback copy also carries the email address.
+    const actions =
+      msg.role === 'assistant' && !msg.error ? buildContactActions(msg.content) : null;
+
     const wrapper = el('div', { className: `cw-msg ${roleClass}` },
       el('div', { className: 'cw-msg-bubble', textContent: msg.content }),
+      actions,
       el('span', { className: 'cw-msg-time',   textContent: formatTime(msg.timestamp) })
     );
 
