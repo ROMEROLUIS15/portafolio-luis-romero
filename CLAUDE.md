@@ -44,6 +44,11 @@ The site itself has no build: open `index.html`, or use VS Code Live Server (con
 `npm run deploy:*` and `db:migrate` hardcode `--project-ref dsrxcqjivhvhvpqumcvb` in `package.json`.
 The Deno/Supabase CLIs are expected on PATH; Node is only used to run Vitest.
 
+**There is no linter and no formatter** — no ESLint, no Prettier, no `npm run lint`. Match the surrounding
+style by reading it. `npx vitest run --coverage` is the only quality gate beyond the tests: `vitest.config.js`
+instruments **`chat-widget.js` only** and fails under 75% line coverage, and it excludes `supabase/**` — that
+exclusion is why `npm test` doesn't try to run the Deno tests as Vitest suites.
+
 ## Architecture
 
 ### Three runtimes, one repo
@@ -218,11 +223,48 @@ miss degrades to the old behaviour instead of leaving a sentence with a hole in 
 compose URL, to hand off to whatever mail client the visitor already uses.
 
 `chat-widget.js` builds DOM through an `el()` factory; every piece of text — answers included — goes in as
-`textContent`. The single `innerHTML` in the file is inside `svgIcon()`, fed only by literal SVG path strings
-(`chat-widget.js:161`). Keep that the only one: no user or model content near `innerHTML`.
+`textContent`. Exactly one `innerHTML` in the file writes markup: `svgIcon()`, fed only by literal SVG path
+strings (`chat-widget.js:186`). The other two are `dom.suggestions.innerHTML = ''` clears
+(`:473`, `:492`). Keep it that way: no user or model content near `innerHTML` in the widget.
+
+### The other three page scripts
+
+`chat-widget.js` is the only frontend file with tests, but it is one of five. Load order, identical in both
+pages (`index.html:915-926`, `spanish/index.html:896-906`, the Spanish copy prefixing `../`):
+typed.js from unpkg → `main.js` → `terminal.js` → `casestudy.js` → `cronix-live.js` → the inline
+`window.__CHAT_*` globals → `chat-widget.js` (`defer`).
+
+| File | What it owns |
+|------|--------------|
+| `main.js` | scroll-to-top on load, nav shrink + active link, dark mode (`localStorage`, **dark by default**), the `IntersectionObserver` that adds `.visible` |
+| `terminal.js` | the interactive CLI section — command table, history, `open [github\|linkedin\|cronix\|whatsapp]` |
+| `cronix-live.js` | fetches `cronix-stats.json`, animates the metric counters, renders changelog + the 6-layer diagram |
+| `casestudy.js` | the Cronix case-study drawer (open/close/overlay/Escape) |
+
+**All four are IIFEs that branch on `document.documentElement.lang` and carry their own EN/ES content tables
+inside the JS.** So "mirror every content change across both HTML pages" is only half the rule: terminal
+output, metric labels and diagram copy are *not* in either HTML — they are `en`/`es` object literals in the
+script, and a change made in one branch and not the other ships a half-translated page. `cronix-live.js` also
+branches on the *path* (`../cronix-stats.json` vs `cronix-stats.json`, `cronix-live.js:9-11`); anything else
+fetched from the page needs that same branch or it 404s only in Spanish.
+
+The widget's `textContent` discipline does **not** hold across these. `cronix-live.js` builds the metrics
+grid, the changelog and the diagram with template literals into `innerHTML` (`:175`, `:208`, `:323`), and the
+changelog interpolates `item.msg` — a Cronix commit message that arrives via `repository_dispatch`. The
+workflow hardened the shell and JSON layers (`jq --arg`, so quotes and newlines can't break the document) but
+nothing escapes HTML on the way in, so a commit message containing markup would render as markup. It is
+Luis's own repo, so this is a trust boundary to keep in mind rather than an open hole — but don't widen it,
+and don't reuse those renderers for anything less trusted. `terminal.js` is fine: its only `innerHTML` is the
+`clear` command wiping the output (`:409`), and typed commands are echoed through `textContent` (`:380`).
 
 `cronix-stats.json` is generated: the `update-cronix-stats.yml` workflow rewrites and commits it on
 `repository_dispatch` from the Cronix repo. Don't hand-edit it expecting the change to survive.
+
+Those numbers exist in **three** places, and only one of them is generated: the JSON, the hand-written
+fallback object `cronix-live.js` renders when the fetch fails (`:377-384`), and the agent's vector store via
+`scripts/ingest.ts`. The workflow updates only the first. The fallback is in sync today; when a metric
+changes, update it by hand and re-run `npm run ingest`, or the site silently shows last year's figures to
+anyone whose fetch fails.
 
 ### Responsive, and why you cannot eyeball it
 
@@ -301,3 +343,8 @@ The four setup docs (`CHAT_AGENT_SETUP.md`, `CONFIGURATION_CHECKLIST.md`, `PENDI
 `INSTRUCCIONES_FINALES.md`) describe a first-time provisioning that is long done and have drifted — e.g.
 `CHAT_AGENT_SETUP.md` still says "OpenAI embeddings" when the pipeline uses Supabase gte-small. Read them as
 history; trust `lib.ts`, `package.json` and this file over them wherever they disagree.
+
+The README has drifted the same way and is the doc most likely to be believed, since it reads current: its
+structure section still lists the CV PDFs as the ingest source, its threshold/limit numbers are stale, and
+its terminal section lists an `about` command that does not exist while omitting `whoami`, `cronix` and
+`open` (`terminal.js:396-435` is the real list). Verify against the code before repeating anything from it.
