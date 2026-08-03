@@ -337,9 +337,60 @@ export async function cacheKey(message: string, lang: Lang): Promise<string> {
 
 // ─── LLM ──────────────────────────────────────────────────────────────────────
 
+/**
+ * An OpenAI-compatible chat-completions endpoint and the models to try on it.
+ *
+ * There is a second provider because the first one's *daily* ceiling is a single
+ * point of failure: on 2026-08-03 both Groq models hit 200k tokens/day and every
+ * uncached question degraded to BUSY_MESSAGE for the rest of the day. Model
+ * fallback within one provider does not help there — the budget is per
+ * organization, so both buckets empty together.
+ *
+ * Cerebras serves the same `gpt-oss-120b` from a separate free-tier budget, and
+ * speaks the same request shape, so answers do not change character when the
+ * chain falls through — only the bill-payer does.
+ */
+export interface LlmProvider {
+  name:   string;
+  url:    string;
+  apiKey: string;
+  models: readonly string[];
+}
+
+export const GROQ_URL     = 'https://api.groq.com/openai/v1/chat/completions';
+export const CEREBRAS_URL = 'https://api.cerebras.ai/v1/chat/completions';
+
+/** Cerebras drops the `openai/` prefix Groq uses for the same weights. */
+export const CEREBRAS_MODELS = ['gpt-oss-120b', 'llama-3.3-70b'] as const;
+
+/**
+ * Pure: takes the keys, never reads the environment (that is `index.ts`'s job).
+ * A provider with no key is left out entirely rather than called and failed, so
+ * the chain still works before `CEREBRAS_API_KEY` is ever set.
+ */
+export function buildProviders(keys: { groq?: string; cerebras?: string }): LlmProvider[] {
+  const providers: LlmProvider[] = [];
+  if (keys.groq) {
+    providers.push({ name: 'groq', url: GROQ_URL, apiKey: keys.groq, models: GROQ_MODELS });
+  }
+  if (keys.cerebras) {
+    providers.push({
+      name:   'cerebras',
+      url:    CEREBRAS_URL,
+      apiKey: keys.cerebras,
+      models: CEREBRAS_MODELS,
+    });
+  }
+  return providers;
+}
+
 export interface GroqOptions {
   apiKey: string;
   models?: readonly string[];
+  /** Defaults to Groq's endpoint, so existing callers keep their behaviour. */
+  url?: string;
+  /** Names the provider in log lines and error messages. */
+  providerName?: string;
   /** Injected so tests can drive the fallback chain without hitting the network. */
   fetchImpl?: typeof fetch;
 }
@@ -351,8 +402,9 @@ export async function callGroq(
   opts: GroqOptions
 ): Promise<string> {
   const doFetch = opts.fetchImpl ?? fetch;
+  const label   = opts.providerName ?? 'groq';
 
-  const response = await doFetch('https://api.groq.com/openai/v1/chat/completions', {
+  const response = await doFetch(opts.url ?? GROQ_URL, {
     method: 'POST',
     headers: {
       Authorization:  `Bearer ${opts.apiKey}`,
@@ -373,9 +425,9 @@ export async function callGroq(
   if (!response.ok) {
     const detail = await response.text();
     if (response.status === 429) {
-      throw new GroqRateLimitError(`Groq rate limited (${model}): ${detail.slice(0, 200)}`);
+      throw new GroqRateLimitError(`${label} rate limited (${model}): ${detail.slice(0, 200)}`);
     }
-    throw new Error(`Groq API error: ${response.status} ${detail}`);
+    throw new Error(`${label} API error: ${response.status} ${detail}`);
   }
 
   const data = await response.json();
@@ -386,7 +438,7 @@ export async function callGroq(
   // request, so the caller can retry on the next one.
   if (content === '') {
     throw new GroqEmptyCompletionError(
-      `Groq returned empty content (${model}, finish_reason=${data.choices?.[0]?.finish_reason})`,
+      `${label} returned empty content (${model}, finish_reason=${data.choices?.[0]?.finish_reason})`,
     );
   }
 
@@ -398,6 +450,9 @@ export async function callGroq(
  * rate-limit bucket, so a 429 on the primary falls through to the next — as does
  * an empty completion. Only if every model is rate-limited does
  * GroqRateLimitError propagate. Any other error aborts immediately.
+ *
+ * Single-provider: one bad key or one outage takes the answer down with it,
+ * which is why `callLlmWithFallback` wraps this rather than replacing it.
  */
 export async function callGroqWithFallback(
   systemPrompt: string,
@@ -425,4 +480,49 @@ export async function callGroqWithFallback(
   }
 
   throw lastRateLimit ?? new GroqRateLimitError('All Groq models rate limited');
+}
+
+/**
+ * Walks the providers in order, and within each one its models.
+ *
+ * The two levels fail differently on purpose. Inside a provider, only a 429 or
+ * an empty completion moves to the next model; anything else means the request
+ * itself is wrong and there is no point repeating it. *Between* providers,
+ * every failure moves on — including the ones that abort inside a provider. A
+ * wrong model id, a revoked key or a 500 at the first provider must not take
+ * down a request the second one could have answered; that would make the
+ * fallback a liability rather than insurance.
+ *
+ * If nothing answers, a rate limit anywhere in the chain wins the throw, so the
+ * caller still degrades to BUSY_MESSAGE with HTTP 200 instead of a hard error.
+ */
+export async function callLlmWithFallback(
+  systemPrompt: string,
+  userMessage: string,
+  opts: { providers: LlmProvider[]; fetchImpl?: typeof fetch }
+): Promise<string> {
+  if (opts.providers.length === 0) {
+    throw new Error('No LLM provider configured — set GROQ_API_KEY, CEREBRAS_API_KEY or both');
+  }
+
+  let lastRateLimit: GroqRateLimitError | null = null;
+  let lastError:     unknown                   = null;
+
+  for (const provider of opts.providers) {
+    try {
+      return await callGroqWithFallback(systemPrompt, userMessage, {
+        apiKey:       provider.apiKey,
+        models:       provider.models,
+        url:          provider.url,
+        providerName: provider.name,
+        fetchImpl:    opts.fetchImpl,
+      });
+    } catch (err) {
+      if (err instanceof GroqRateLimitError) lastRateLimit = err;
+      else console.warn(`[chat] provider ${provider.name} failed:`, (err as Error).message);
+      lastError = err;
+    }
+  }
+
+  throw lastRateLimit ?? lastError ?? new GroqRateLimitError('Every provider failed');
 }

@@ -20,7 +20,8 @@ import {
   buildCorsHeaders,
   buildSystemPrompt,
   cacheKey,
-  callGroqWithFallback,
+  buildProviders,
+  callLlmWithFallback,
   isOriginAllowed,
   isValidMessage,
   isValidUUIDv4,
@@ -63,12 +64,26 @@ const ENV = {
   supabaseAnonKey:    Deno.env.get('SUPABASE_ANON_KEY')         ?? '',
   supabaseServiceKey: Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '',
   groqApiKey:         Deno.env.get('GROQ_API_KEY')              ?? '',
+  cerebrasApiKey:     Deno.env.get('CEREBRAS_API_KEY')          ?? '',
   allowedOrigins:     Deno.env.get('ALLOWED_ORIGINS')           ?? '',
 } as const;
 
-// Fail fast at cold start if critical env vars are missing
+// Ordered chain: Groq first, then whatever else has a key. Cerebras is optional
+// — with no key set the chain is exactly what it was before, one provider.
+const LLM_PROVIDERS = buildProviders({
+  groq:     ENV.groqApiKey,
+  cerebras: ENV.cerebrasApiKey,
+});
+
+// Fail fast at cold start if critical env vars are missing.
+// `cerebrasApiKey` is deliberately not critical: it is the *second* provider, so
+// its absence must leave the function exactly as it was, not kill it at boot.
+// Listing it here without this exemption would take the agent down the moment
+// this file deployed, which is the opposite of what a fallback is for.
+const OPTIONAL_VARS = new Set(['cerebrasApiKey']);
+
 const MISSING_VARS = Object.entries(ENV)
-  .filter(([, v]) => !v)
+  .filter(([k, v]) => !v && !OPTIONAL_VARS.has(k))
   .map(([k]) => k);
 
 if (MISSING_VARS.length > 0) {
@@ -274,7 +289,7 @@ async function runRagPipeline(
   try {
     answer = stripMarkdown(
       stripMetaPrefix(
-        await callGroqWithFallback(systemPrompt, message, { apiKey: ENV.groqApiKey })
+        await callLlmWithFallback(systemPrompt, message, { providers: LLM_PROVIDERS })
       )
     );
   } catch (err) {

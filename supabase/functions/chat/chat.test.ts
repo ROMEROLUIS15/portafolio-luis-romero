@@ -25,6 +25,9 @@ import {
 
 import {
   GROQ_MAX_TOKENS,
+  GROQ_URL,
+  buildProviders,
+  callLlmWithFallback,
   GROQ_MODELS,
   GroqEmptyCompletionError,
   GroqRateLimitError,
@@ -358,6 +361,102 @@ Deno.test('stripMarkdown — the output never contains markdown the e2e test rej
   );
 });
 
+// ─── Provider chain ───────────────────────────────────────────────────────────
+// Groq's daily ceiling emptied both its models at once on 2026-08-03 and every
+// uncached question degraded for the rest of the day. Model fallback cannot help
+// there — the budget is per organization — so a second provider exists.
+
+function respond(content: string): Response {
+  return new Response(JSON.stringify({ choices: [{ message: { content } }] }), { status: 200 });
+}
+function status(code: number, body = '{}'): Response {
+  return new Response(body, { status: code });
+}
+
+Deno.test('buildProviders — a provider with no key is left out, not called and failed', () => {
+  assertEquals(buildProviders({ groq: 'g' }).map((p) => p.name), ['groq']);
+  assertEquals(buildProviders({ cerebras: 'c' }).map((p) => p.name), ['cerebras']);
+  assertEquals(buildProviders({ groq: 'g', cerebras: 'c' }).map((p) => p.name), ['groq', 'cerebras']);
+  assertEquals(buildProviders({}), []);
+});
+
+Deno.test('buildProviders — Groq is always tried first', () => {
+  const [first] = buildProviders({ cerebras: 'c', groq: 'g' });
+  assertEquals(first.name, 'groq');
+  assertEquals(first.url, GROQ_URL);
+});
+
+Deno.test('callLlmWithFallback — a rate-limited provider falls through to the next', async () => {
+  const urls: string[] = [];
+  const answer = await callLlmWithFallback('sys', 'msg', {
+    providers: buildProviders({ groq: 'g', cerebras: 'c' }),
+    fetchImpl: ((url: string) => {
+      urls.push(String(url));
+      return Promise.resolve(
+        String(url) === GROQ_URL ? status(429, '{"error":"rate limited"}') : respond('from cerebras'),
+      );
+    }) as unknown as typeof fetch,
+  });
+
+  assertEquals(answer, 'from cerebras');
+  // Both Groq models exhausted first, then the second provider.
+  assertEquals(urls.filter((u) => u === GROQ_URL).length, GROQ_MODELS.length);
+  assertStringIncludes(urls[urls.length - 1], 'cerebras');
+});
+
+Deno.test('callLlmWithFallback — a non-429 failure also falls through to the next provider', async () => {
+  // Inside one provider a 404 aborts: the request is wrong, repeating it is
+  // pointless. Between providers it must NOT abort — a wrong model id or a
+  // revoked key at the first provider would otherwise sink a request the second
+  // could answer, making the fallback a liability instead of insurance.
+  const answer = await callLlmWithFallback('sys', 'msg', {
+    providers: buildProviders({ groq: 'g', cerebras: 'c' }),
+    fetchImpl: ((url: string) =>
+      Promise.resolve(
+        String(url) === GROQ_URL ? status(404, 'no such model') : respond('second provider'),
+      )) as unknown as typeof fetch,
+  });
+
+  assertEquals(answer, 'second provider');
+});
+
+Deno.test('callLlmWithFallback — every provider rate-limited still throws the rate-limit error', async () => {
+  // index.ts keys BUSY_MESSAGE (HTTP 200) off this type. Losing it would turn a
+  // temporary budget problem into a hard error for the visitor.
+  await assertRejects(
+    () =>
+      callLlmWithFallback('sys', 'msg', {
+        providers: buildProviders({ groq: 'g', cerebras: 'c' }),
+        fetchImpl: (() => Promise.resolve(status(429, '{}'))) as unknown as typeof fetch,
+      }),
+    GroqRateLimitError,
+  );
+});
+
+Deno.test('callLlmWithFallback — a rate limit outranks a later hard failure', async () => {
+  // Groq out of budget, Cerebras misconfigured: the visitor should still get the
+  // retryable busy message rather than a 500.
+  await assertRejects(
+    () =>
+      callLlmWithFallback('sys', 'msg', {
+        providers: buildProviders({ groq: 'g', cerebras: 'c' }),
+        fetchImpl: ((url: string) =>
+          Promise.resolve(
+            String(url) === GROQ_URL ? status(429, '{}') : status(500, 'boom'),
+          )) as unknown as typeof fetch,
+      }),
+    GroqRateLimitError,
+  );
+});
+
+Deno.test('callLlmWithFallback — no provider configured is a clear error, not a silent hang', async () => {
+  await assertRejects(
+    () => callLlmWithFallback('sys', 'msg', { providers: [] }),
+    Error,
+    'No LLM provider configured',
+  );
+});
+
 // ─── normalizeMessage / cacheKey ──────────────────────────────────────────────
 
 Deno.test('normalizeMessage — accents, punctuation and spacing collapse to one key', () => {
@@ -508,7 +607,8 @@ Deno.test('callGroqWithFallback — a non-429 error aborts without trying the ne
   await assertRejects(
     () => callGroqWithFallback('sys', 'msg', { apiKey: 'bad', fetchImpl }),
     Error,
-    'Groq API error: 401'
+    // The message carries the provider label now that there is more than one.
+    'groq API error: 401'
   );
   assertEquals(modelsCalled, [GROQ_MODELS[0]], 'must not burn the fallback on an auth error');
 });
