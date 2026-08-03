@@ -91,14 +91,33 @@ CORS preflight → origin guard (403) → session token UUID v4 (400) → body v
   → embedding via the `embed` Edge Function (Supabase gte-small, 384 dims, free)
   → match_documents() RPC, top-6, language-prioritized then cosine
   → below threshold? FALLBACK without calling the LLM (cached — it's deterministic)
-  → buildSystemPrompt → callGroqWithFallback → stripMetaPrefix → stripMarkdown
+  → buildSystemPrompt → callLlmWithFallback → stripMetaPrefix → stripMarkdown
   → write cache + log (fire-and-forget) → { answer, sources }
 ```
 
 Two Edge Functions must both be deployed: `chat` and `embed`. `chat` calls `embed` over HTTP with the anon
 key — deploying only one leaves the pipeline broken.
 
-`callGroqWithFallback` walks `GROQ_MODELS` in order: each model has its own rate-limit bucket, so a 429 or an
+`callLlmWithFallback` walks **providers**, and `callGroqWithFallback` walks the models inside one. The two
+levels fail differently on purpose: inside a provider only a 429 or an empty completion advances to the next
+model, because anything else means the request is wrong and repeating it is pointless; *between* providers
+every failure advances, or a wrong model id at the first provider would sink a request the second could
+answer. A rate limit anywhere still wins the throw, so the visitor gets `BUSY_MESSAGE` at HTTP 200 rather
+than a hard error.
+
+The second provider exists because **Groq's ceiling is per organization, not per model**: on 2026-08-03 both
+`GROQ_MODELS` hit 200k tokens/day within minutes of each other and every uncached question degraded for the
+rest of the day. Model fallback cannot help with that — only a different bill-payer can. `buildProviders`
+skips any provider with no key, so the chain is Groq-only until a second key is set, and `CEREBRAS_API_KEY`
+is **exempt from the fail-fast env check** in `index.ts`: an optional var listed there without the exemption
+throws at cold start and takes the agent down the moment it deploys. Vendors already ruled out: Cerebras's
+free tier does not cover the API (`402 payment_required`), and Gemini is a no from Luis.
+
+`BUSY_MESSAGE` hands over the email and the WhatsApp number for the same reason. "Give me a few seconds"
+describes a per-minute hiccup; a spent *daily* budget is hours long, and the widget builds its contact
+buttons off the answer text, so the degraded path grows the same buttons a good answer would.
+
+Historic behaviour of the inner walk: `callGroqWithFallback` walks `GROQ_MODELS` in order: each model has its own rate-limit bucket, so a 429 or an
 empty completion (a reasoning model can burn the entire token budget on chain-of-thought) falls through to
 the next. Only if every model is rate-limited does the request degrade to `BUSY_MESSAGE` — returned with
 HTTP 200 and deliberately *not* cached.
@@ -350,12 +369,20 @@ turned out to be the only one in the file using `contact-info` where the English
 
 ## Secrets
 
-`.env` (git-ignored) holds the real values; `.env.example` documents the shape. Only two are user secrets:
+`.env` (git-ignored) holds the real values; `.env.example` documents the shape. Two user secrets are
+required, plus one optional second-provider key:
 
 ```bash
 supabase secrets set GROQ_API_KEY="$(grep '^GROQ_API_KEY=' .env | cut -d= -f2-)"
 supabase secrets set ALLOWED_ORIGINS="$(grep '^ALLOWED_ORIGINS=' .env | cut -d= -f2-)"
+supabase secrets set CEREBRAS_API_KEY="..."   # optional; unset means Groq-only
 ```
+
+**Luis edits `.env` and nothing else** — propagating to the Supabase secret, the GitHub repo secret and (for
+the publishable key) both HTML pages is our job. Verify a rotated key by reading it back as a prefix and a
+length, never by printing it: a key pasted in full into a conversation is what put key rotation on the
+follow-up list in the first place. A rotated secret only reaches a *new* isolate, so redeploy after setting
+one, then prove it with a question that cannot be a cache hit.
 
 The Supabase CLI has no persistent login in this environment — `supabase functions deploy` fails with
 `403 … does not have the necessary privileges`. The personal access token lives in `.env` as
