@@ -185,7 +185,16 @@ markdown files is how you change what the agent knows — then re-run `npm run i
 
 Both CV markdown files are **git-ignored** (`.gitignore:21-22`) because they carry personal contact details.
 They exist only in the local working copy, so a fresh clone cannot run `npm run ingest`, and `git status`
-will never show changes to them — verify edits to them by reading the file, not through git.
+will never show changes to them — verify edits to them by reading the file, not through git. They are one CV
+in two languages, not two documents: **every content edit goes into both**, or the agent answers differently
+depending on the page the visitor is on.
+
+Each role and project carries an explicit `Duración:` / `Duration:` on its date line, because the model would
+not do the arithmetic on its own — "¿cuánto tardaste?" got "no tengo ese detalle" while the range sat right
+there. The still-running ones are written anchored ("8 meses y en curso (a 08/2026)") so they read as dated
+rather than wrong; refreshing them means editing both files and re-ingesting. Keep the duration field to the
+span alone: a first draft appended "with the first phase in production" to it and the model promptly claimed
+the first phase "reached production after three months", which the CV never said.
 
 `ingest.ts` is idempotent: it deletes the existing rows for each source before inserting the new chunks, so
 re-running it is safe and does not duplicate. `seed-availability.ts` behaves the same way. `npm run dedupe`

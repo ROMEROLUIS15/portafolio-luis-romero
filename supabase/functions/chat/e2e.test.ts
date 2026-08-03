@@ -302,6 +302,18 @@ const GROUNDING: GroundingCase[] = [
     mustMatch:    /m[ée]rida|venezuela/i,
     mustNotMatch: /solo puedo ayudar/i,
   },
+  {
+    // "¿Cuánto tardaste?" used to get "no tengo ese detalle": the CV carried
+    // date ranges but never a span, and the model would not do the arithmetic.
+    // Kiura on purpose — it is the one closed range, so the expected number
+    // never moves. Asserting a duration that is still running would fail this
+    // suite every month for no reason other than the calendar.
+    name:         'knows how long a finished engagement lasted',
+    ask:          'Cuanto tiempo trabajaste en Kiura?',
+    lang:         'es',
+    mustMatch:    /\b9\b|nueve/i,
+    mustNotMatch: /no tengo ese detalle|no tengo esa informaci[oó]n/i,
+  },
 ];
 
 for (const c of GROUNDING) {
