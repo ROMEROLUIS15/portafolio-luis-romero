@@ -639,7 +639,10 @@ nav.scrolled {
    ============================================ */
 .challenges-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  /* min() so the 320px floor never exceeds the viewport: on a 320px phone the
+     bare minmax(320px, …) made the card wider than the screen, and the
+     overflow-x: hidden on <html> turned that into content silently cut off. */
+  grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr));
   gap: 20px;
 }
 .challenge-card {
@@ -707,9 +710,15 @@ nav.scrolled {
   flex-shrink: 0;
 }
 .contact-icon i { font-size: 16px; color: var(--accent); }
-.contact-detail {}
+/* min-width: 0 stops the longest value — the 38-char LinkedIn URL, which has no
+   break opportunity — from setting the min-content width of the whole contact
+   column and pushing both cards past a 320px screen. */
+.contact-detail { min-width: 0; }
 .contact-detail .label { font-size: 11px; color: var(--text-muted); }
-.contact-detail .value { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.contact-detail .value {
+  font-size: 14px; font-weight: 500; color: var(--text-primary);
+  overflow-wrap: anywhere;
+}
 
 /* Form */
 .contact-form {
