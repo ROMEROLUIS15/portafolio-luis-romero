@@ -144,16 +144,21 @@ pipeline — embedding, vector search, prompt, model — in four layers:
   `gpt-oss-20b` from the same free tier. Keep judge criteria single-clause — an "and ideally…" clause gets
   enforced as a requirement and fails correct answers.
 
-Env vars, each gate skipping instead of failing: `SUPABASE_URL` + `SUPABASE_SERVICE_ROLE_KEY` enable
-everything, `SUPABASE_URL` + `GROQ_API_KEY` (reachable) enable the judge, `CHAT_ORIGIN` overrides the origin.
+Env vars, each gate skipping instead of failing: `SUPABASE_URL` alone enables everything except the one case
+that reads `chat_logs`, `SUPABASE_SERVICE_ROLE_KEY` adds that one, `SUPABASE_URL` + `GROQ_API_KEY`
+(reachable) enable the judge, `CHAT_ORIGIN` overrides the origin. **A skipped case looks exactly like a
+passing one** — until 2026-08-03 a single gate demanded the service_role key for the whole file, so
+`agent-eval.yml`, which deliberately carries no such key, reported success while running 2 of 27 cases. Every
+grounding check had been skipping for months under a green tick. The workflow now fails when more than one
+case skips; keep that guard, and read the counts, not the colour.
 The suite self-throttles to ~9 req/min because the function allows 10 — it takes minutes, and removing the
 pacing turns the later cases into 429s that read as agent failures.
 
 **Groq answers 403 to Luis's VPN exit IP, and the VPN is not optional for him**, so the judge cases cannot run
 from his machine. `.github/workflows/agent-eval.yml` (manual `workflow_dispatch`) runs the suite from a GitHub
-runner for exactly that reason. It deliberately carries no `SUPABASE_SERVICE_ROLE_KEY` — the `chat_logs`
-tests skip themselves rather than put the most powerful key in a public repo's secrets. Tests reported as
-"ignored" there are that, not failures.
+runner for exactly that reason. It deliberately carries no `SUPABASE_SERVICE_ROLE_KEY` — the one `chat_logs`
+test skips itself rather than put the most powerful key in a public repo's secrets. Exactly one "ignored"
+there is expected; more than one now fails the run.
 
 ### Origin guard
 

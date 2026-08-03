@@ -12,10 +12,14 @@
 #   SUPABASE_URL   https://<ref>.supabase.co
 #   GROQ_API_KEY   the same key the Edge Function uses
 #
-# SUPABASE_SERVICE_ROLE_KEY is intentionally NOT required. Without it the tests
-# that count chat_logs rows skip themselves, which keeps the most powerful key
+# SUPABASE_SERVICE_ROLE_KEY is intentionally NOT required. Without it the one
+# test that counts chat_logs rows skips itself, which keeps the most powerful key
 # in the project out of a public repository's secrets. Add it only if you want
 # the full suite here, and understand that trade-off first.
+#
+# Everything else runs on SUPABASE_URL alone. It did not always: a single gate
+# demanded the service_role key for the entire file, so this workflow was green
+# on 2 of 27 cases. The run now fails if more than one case skips.
 # ============================================================
 name: Agent Evaluation
 
@@ -67,7 +71,18 @@ jobs:
             exit 1
           fi
           deno test --config supabase/functions/deno.json --allow-env --allow-net \
-            supabase/functions/chat/e2e.test.ts
+            supabase/functions/chat/e2e.test.ts | tee eval.log
+
+          # A green run here proves nothing unless the cases actually ran. The
+          # whole suite used to be gated on SUPABASE_SERVICE_ROLE_KEY, which this
+          # workflow deliberately does not carry, so it reported success while
+          # running 2 of 27 cases — every grounding check skipped, for months,
+          # under a green tick. Only the chat_logs case may skip here.
+          ignored=$(grep -oE '[0-9]+ ignored' eval.log | tail -1 | grep -oE '^[0-9]+' || echo 0)
+          if [ "${ignored:-0}" -gt 1 ]; then
+            echo "::error::${ignored} cases were skipped; at most 1 (the chat_logs one) may skip in this workflow. The suite is not running what you think it is."
+            exit 1
+          fi
 
       - name: What ran and what did not
         if: always()

@@ -6,8 +6,11 @@
  *     deno test --config supabase/functions/deno.json --allow-env --allow-net \
  *       supabase/functions/chat/e2e.test.ts
  *
- * Skipped automatically when those env vars are absent, so `deno test` on the
- * whole folder stays green offline and in CI.
+ * `SUPABASE_URL` alone runs everything except the one case that reads chat_logs;
+ * `SUPABASE_SERVICE_ROLE_KEY` adds that one; `GROQ_API_KEY` (reachable) adds the
+ * two judge cases. Each gate skips rather than fails, so `deno test` on the whole
+ * folder stays green offline — but see the note on the gates below: a skip that
+ * nobody counts is indistinguishable from a pass.
  *
  * Why these assertions and not just "HTTP 200":
  * the pipeline fails open. If the service_role key is revoked, the rate-limit
@@ -24,12 +27,24 @@ import {
   assertNotMatch,
 } from 'https://deno.land/std@0.224.0/assert/mod.ts';
 
+// Imported, never redeclared: a private copy of this string would drift from the
+// function's the moment the wording changes, and the drift is invisible — the
+// suite would just stop recognising a busy agent and start failing on grounding.
+import { BUSY_MESSAGE } from './lib.ts';
+
 const SUPABASE_URL      = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY  = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const ORIGIN            = Deno.env.get('CHAT_ORIGIN') ?? 'https://portafolio-luis-romero.vercel.app';
 
-const CONFIGURED = Boolean(SUPABASE_URL && SERVICE_ROLE_KEY);
-const opts = { ignore: !CONFIGURED };
+// Two gates, not one. Driving the deployed function needs nothing but its URL;
+// only the chat_logs assertion needs the service_role key. Gating everything on
+// both meant `agent-eval.yml` — which deliberately carries no service_role key —
+// reported success while running 2 of 27 cases: every grounding case, every
+// availability guard and every language check skipped, silently, for months.
+const CONFIGURED    = Boolean(SUPABASE_URL);
+const LOGS_READABLE = Boolean(SUPABASE_URL && SERVICE_ROLE_KEY);
+const opts    = { ignore: !CONFIGURED };
+const logOpts = { ignore: !LOGS_READABLE };
 
 /** Unique suffix so every run misses the answer cache and exercises the LLM. */
 const nonce = () => `e2e-${crypto.randomUUID().slice(0, 8)}`;
@@ -62,9 +77,37 @@ async function rawAsk(message: string, lang: 'es' | 'en', origin = ORIGIN) {
   return { status: res.status, body: await res.json().catch(() => ({})) };
 }
 
+/**
+ * Asks, and refuses to accept `BUSY_MESSAGE` as an answer.
+ *
+ * The suite's pacing was built for Supabase's 10 req/min. Groq's free tier is
+ * the tighter budget: a full run sends a ~2.7k-token prompt per case, both
+ * models hit their limit partway through, and the function soft-degrades to
+ * BUSY_MESSAGE with HTTP 200 — by design. The first run of this file after the
+ * gate was fixed showed five "grounding failures" that were all that message.
+ * A grounding assertion against it says nothing about grounding, so wait for the
+ * budget to come back instead, and if it does not, fail saying exactly that.
+ */
+const BUSY = new Set<string>(Object.values(BUSY_MESSAGE));
+const BUSY_RETRIES    = 2;
+const BUSY_BACKOFF_MS = 30_000;
+
 async function askChat(message: string, lang: 'es' | 'en', origin = ORIGIN) {
-  await throttle();
-  return rawAsk(message, lang, origin);
+  for (let attempt = 0; ; attempt++) {
+    await throttle();
+    const res = await rawAsk(message, lang, origin);
+
+    if (typeof res.body?.answer !== 'string' || !BUSY.has(res.body.answer)) return res;
+
+    if (attempt === BUSY_RETRIES) {
+      throw new Error(
+        'Groq is rate-limited on every model, so the agent answered BUSY_MESSAGE ' +
+          `${BUSY_RETRIES + 1} times for: ${JSON.stringify(message)}. This is the free-tier ` +
+          'token budget, not a grounding regression — re-run the eval later.'
+      );
+    }
+    await new Promise((r) => setTimeout(r, BUSY_BACKOFF_MS * (attempt + 1)));
+  }
 }
 
 async function countChatLogs(): Promise<number> {
@@ -83,7 +126,7 @@ async function countChatLogs(): Promise<number> {
   return Number(total ?? '0');
 }
 
-Deno.test('e2e — a fresh question is answered and logged', opts, async () => {
+Deno.test('e2e — a fresh question is answered and logged', logOpts, async () => {
   const before = await countChatLogs();
 
   const { status, body } = await askChat(
