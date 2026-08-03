@@ -64,6 +64,15 @@
   white-space: pre-wrap;
   word-break: break-word;
 }
+/* Two-column rows (term + description). The negative indent pulls the first
+   line back to the left edge, so on a wide screen nothing moves; when the
+   description wraps on a phone, the continuation hangs under the column it
+   belongs to. --col is set per row by terminal.js: the tables in that file
+   align at different widths. */
+.t-line.row {
+  padding-left: var(--col, 0);
+  text-indent: calc(-1 * var(--col, 0px));
+}
 .t-line.cmd    { color: var(--accent); }
 .t-line.output { color: rgba(255,255,255,0.82); }
 .t-line.muted  { color: rgba(255,255,255,0.35); font-size: 12px; }

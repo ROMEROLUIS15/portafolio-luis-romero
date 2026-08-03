@@ -345,11 +345,30 @@
   const c = content[lang];
 
   /* ---------- RENDER ---------- */
+
+  // A two-column row: two leading spaces, a term, then the gutter before its
+  // description — "  whoami       Who is Luis Romero". The width up to the
+  // description is measured per line because the three tables in this file do
+  // not share one: help aligns at 15 characters, skills at 14, contact at 13.
+  const COLUMN_ROW = /^ {2}\S.*?  +(?=\S)/;
+
   function printLines(lines) {
     lines.forEach(line => {
       const el = document.createElement('div');
       el.className = `t-line ${line.t}`;
       el.textContent = line.v || '';
+
+      // On a phone the description wraps. Without a hanging indent the second
+      // line starts at column 0, where it reads as the next command rather
+      // than as the rest of this one.
+      if (line.t === 'output') {
+        const gutter = COLUMN_ROW.exec(line.v || '');
+        if (gutter) {
+          el.classList.add('row');
+          el.style.setProperty('--col', `${gutter[0].length}ch`);
+        }
+      }
+
       output.appendChild(el);
     });
     output.scrollTop = output.scrollHeight;
