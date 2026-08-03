@@ -151,6 +151,18 @@ passing one** — until 2026-08-03 a single gate demanded the service_role key f
 `agent-eval.yml`, which deliberately carries no such key, reported success while running 2 of 27 cases. Every
 grounding check had been skipping for months under a green tick. The workflow now fails when more than one
 case skips; keep that guard, and read the counts, not the colour.
+
+**Neither run is complete on its own, so a full evaluation is two commands.** The runner cannot execute the
+`chat_logs` case (no `service_role` key) and Luis's machine cannot execute the two judges (Groq 403s his VPN),
+so CI covers 26 of 27 and the local run covers 26 of 27 — a different 26. The one CI misses is the one that
+proves the pipeline is not failing open, which is the most consequential assertion in the file, so pair the
+workflow with:
+
+```bash
+set -a && . ./.env && set +a
+deno test --config supabase/functions/deno.json --allow-env --allow-net \
+  supabase/functions/chat/e2e.test.ts --filter "a fresh question is answered and logged"
+```
 The suite self-throttles to ~9 req/min because the function allows 10 — it takes minutes, and removing the
 pacing turns the later cases into 429s that read as agent failures.
 
