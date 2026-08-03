@@ -288,6 +288,62 @@ describe('Property 11 — Retry exhausted before fallback', () => {
   }, 30000);
 });
 
+// ─── Error copy names the side that actually broke ───────────────────────────
+// A dropped request and a 5xx used to print the same "el agente no está
+// disponible". In a real conversation that message appeared four times while
+// the Edge Function logs showed three of those requests never arriving at all
+// (no preflight, no POST) and the fourth being served in 1181 ms — the agent was
+// healthy every time, and the visitor was told the opposite.
+
+describe('Error copy — a dropped connection is not the agent being down', () => {
+  afterEach(() => vi.restoreAllMocks());
+
+  /** Sends one question, exhausts both retries, returns the last message's text. */
+  async function lastMessageAfterFailure(fetchImpl) {
+    vi.useFakeTimers();
+    loadWidget('es');
+    vi.spyOn(global, 'fetch').mockImplementation(fetchImpl);
+
+    clickBubble();
+    getInput().value = '¿Dónde vive Luis?';
+    getSendBtn()?.click();
+
+    await vi.advanceTimersByTimeAsync(1100);
+    await vi.advanceTimersByTimeAsync(2100);
+    await vi.advanceTimersByTimeAsync(500);
+    vi.useRealTimers();
+
+    const msgs = Array.from(getMessages());
+    return msgs[msgs.length - 1]?.textContent ?? '';
+  }
+
+  it('a rejected fetch points at the connection', async () => {
+    const text = await lastMessageAfterFailure(() =>
+      Promise.reject(new TypeError('Failed to fetch'))
+    );
+    expect(text).toContain('conexión');
+    expect(text).not.toContain('no está disponible');
+  });
+
+  it('an aborted request points at the connection too', async () => {
+    const abort = () => {
+      const err = new Error('The operation was aborted');
+      err.name = 'AbortError';
+      return Promise.reject(err);
+    };
+    const text = await lastMessageAfterFailure(abort);
+    expect(text).toContain('conexión');
+  });
+
+  it('an HTTP 500 does report the agent as unavailable, with the email', async () => {
+    const text = await lastMessageAfterFailure(() =>
+      Promise.resolve({ ok: false, status: 500, json: () => Promise.resolve({}) })
+    );
+    expect(text).toContain('no está disponible');
+    expect(text).toContain('lueduar15@gmail.com');
+  });
+});
+
 // ─── Property 13: Widget transmits lang at exact send moment ──────────────────
 // Feature: portfolio-conversational-agent
 // Property 13: El widget transmite el lang del documento en el momento exacto del envío

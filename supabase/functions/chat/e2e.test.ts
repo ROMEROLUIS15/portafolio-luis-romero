@@ -280,6 +280,28 @@ const GROUNDING: GroundingCase[] = [
     lang:       'en',
     mustMatch:  /july\s*2026|07\/2026|2026/i,
   },
+  // Visitors address the assistant as if it were Luis, and both halves of that
+  // broke at once in production. "¿Dónde vives?" retrieved six chunks, none of
+  // them the CV header that carries the city, and the agent said it didn't have
+  // the detail — the location now also lives in the profile-availability chunk,
+  // which does rank on every phrasing. "¿Cuál es tu ubicación?" retrieved the
+  // city and *still* refused, because the second person read as a question about
+  // the assistant and tripped the off-topic guard-rail. The third-person case
+  // above passed throughout: only asking the way visitors ask catches this.
+  {
+    name:         'location, asked in the second person',
+    ask:          'Donde vives actualmente?',
+    lang:         'es',
+    mustMatch:    /m[ée]rida|venezuela/i,
+    mustNotMatch: /no tengo ese detalle|no tengo esa informaci[oó]n/i,
+  },
+  {
+    name:         'a second-person question is never treated as off-topic',
+    ask:          'Cual es tu ubicacion?',
+    lang:         'es',
+    mustMatch:    /m[ée]rida|venezuela/i,
+    mustNotMatch: /solo puedo ayudar/i,
+  },
 ];
 
 for (const c of GROUNDING) {

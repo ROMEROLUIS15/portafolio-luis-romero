@@ -154,6 +154,7 @@ CÓMO RESPONDER:
 - Apóyate solo en los datos que conoces abajo; NUNCA inventes datos, fechas, tecnologías, proyectos ni métricas.
 - Si no tienes algún dato, dilo con naturalidad (p. ej. "No tengo ese detalle a la mano") en lugar de mencionar un "contexto".
 - Solo hablas sobre Luis Romero: su perfil, experiencia, habilidades, proyectos, disponibilidad y formas de contacto. Si te preguntan algo que no tiene que ver con Luis (cultura general, trivia, otras personas, definiciones, cálculos, etc.), NO lo respondas con tu conocimiento general aunque sepas la respuesta; di con naturalidad que solo puedes ayudar con información sobre Luis y su trabajo.
+- Muchos visitantes te tutean como si hablaran con Luis en persona: "¿dónde vives?", "¿cuál es tu ubicación?", "¿cuánto tardaste en ese proyecto?", "¿cuál es tu fuerte?". Esas preguntas SIEMPRE son sobre Luis, nunca sobre ti: respóndelas con sus datos y no las trates como ajenas al tema. Habla de él en tercera persona ("Luis vive en...") aunque la pregunta venga en segunda.
 - Nunca menciones tu "fecha de corte de conocimiento", "knowledge cutoff", que eres un modelo de IA, ni cómo fuiste entrenado. Habla siempre como el asistente de Luis.
 - Al enumerar tecnologías, habilidades o proyectos, no repitas elementos: agrúpalos y lista cada uno una sola vez. Incluye ÚNICAMENTE las que aparezcan explícitamente en la información de abajo; no agregues ninguna que no esté listada, ni siquiera para completar una categoría o porque sea común en su área.
 - Escribe en texto plano. NUNCA uses markdown: nada de asteriscos para negrita, almohadillas para títulos, ni guiones para viñetas. El widget muestra tu respuesta tal cual, así que esos símbolos se verían literalmente. Si necesitas enumerar, usa frases separadas por comas o párrafos cortos.
@@ -171,6 +172,7 @@ HOW TO RESPOND:
 - Rely only on the facts you know below; NEVER invent data, dates, technologies, projects, or metrics.
 - If you don't have a detail, say so naturally (e.g. "I don't have that detail on hand") instead of mentioning a "context".
 - You only talk about Luis Romero: his profile, experience, skills, projects, availability, and ways to contact him. If asked about anything unrelated to Luis (general knowledge, trivia, other people, definitions, calculations, etc.), do NOT answer it from your general knowledge even if you know it; say naturally that you can only help with information about Luis and his work.
+- Many visitors address you as if you were Luis himself: "where do you live?", "what is your location?", "how long did that project take you?", "what is your strong suit?". Those questions are ALWAYS about Luis, never about you: answer them with his facts and never treat them as off-topic. Speak about him in the third person ("Luis lives in...") even when the question is in the second.
 - Never mention your "knowledge cutoff", that you are an AI model, or how you were trained. Always speak as Luis's assistant.
 - When listing technologies, skills, or projects, do not repeat items: group them and list each one only once. Include ONLY those explicitly present in the information below; never add any that is not listed, not even to round out a category or because it's common in his field.
 - Write in plain text. NEVER use markdown: no asterisks for bold, no hashes for headings, no dashes for bullets. The widget renders your answer verbatim, so those symbols would show up literally. If you need to enumerate, use comma-separated phrases or short paragraphs.
@@ -234,6 +236,61 @@ export function stripMetaPrefix(text: string): string {
   return startsWithCaseSensitiveToken(stripped)
     ? stripped
     : stripped.charAt(0).toUpperCase() + stripped.slice(1);
+}
+
+/**
+ * Removes markdown syntax from an answer. The widget renders answers as
+ * `textContent`, so every marker the model emits is shown literally — a visitor
+ * reading "**Motosmax Cordialidad**" is looking at a bug. Both prompts forbid
+ * markdown and gpt-oss emits it anyway, which is exactly the case
+ * `stripMetaPrefix` already exists for: a prompt is a request, not a guarantee.
+ *
+ * Conservative by construction — every rule needs a *matched pair* or a
+ * line-start anchor, so prose that merely contains the characters survives
+ * untouched: `17*23`, `chat_logs`, `gpt-oss-120b`, an email or a bare domain.
+ */
+export function stripMarkdown(text: string): string {
+  const pass = (s: string): string =>
+    s
+      // Fenced blocks: drop the fence, keep the code inside.
+      .replace(/```[a-z]*\n?([\s\S]*?)```/gi, '$1')
+      // Headings, blockquotes and bullets, only at the start of a line, and a
+      // whole run of them at once: "- - - x" is one line with three markers, and
+      // stripping one per pass would need as many passes as the model felt like
+      // nesting. The text after the run is kept.
+      .replace(/^[ \t]*(?:#{1,6}[ \t]+)+/gm, '')
+      .replace(/^[ \t]*(?:>[ \t]+)+/gm, '')
+      .replace(/^[ \t]*(?:[-*+][ \t]+)+/gm, '')
+      // Paired emphasis. The lookahead rejects "** " so an unmatched pair stays.
+      .replace(/\*\*(?=\S)([\s\S]*?\S)\*\*/g, '$1')
+      .replace(/__(?=\S)([\s\S]*?\S)__/g, '$1')
+      // Single-char emphasis needs a boundary before the opener, which is what
+      // keeps snake_case identifiers and a lone multiplication sign intact.
+      .replace(/(^|[\s(])\*(?=\S)([^*\n]*?\S)\*(?=[\s).,;:!?]|$)/g, '$1$2')
+      .replace(/(^|[\s(])_(?=\S)([^_\n]*?\S)_(?=[\s).,;:!?]|$)/g, '$1$2')
+      // Inline code.
+      .replace(/`([^`\n]+)`/g, '$1')
+      // Links and images: keep the label and the URL, drop the brackets. The URL
+      // has to survive verbatim — the widget's contact detection reads the text.
+      .replace(/!?\[([^\]\n]*)\]\(([^)\s]+)[^)]*\)/g, (_m, label, url) =>
+        label ? `${label} (${url})` : url
+      )
+      // Whatever run of asterisks is left wrapped nothing — an empty "**" pair,
+      // or the leftover of a nested one. It is noise in prose either way, and
+      // never punctuation: "17*23" is a single asterisk and stays single.
+      .replace(/\*{2,}/g, '');
+
+  // One pass can expose markup that was nested inside what it just removed
+  // ("- - item", "**`x`**"). Iterate to a fixed point so the function is
+  // idempotent and callers never have to wonder how many passes they need.
+  // Each rule only deletes, so length is non-increasing and this terminates.
+  let out = text;
+  for (let i = 0; i < 5; i++) {
+    const next = pass(out);
+    if (next === out) return out;
+    out = next;
+  }
+  return out;
 }
 
 // ─── SHA-256 ──────────────────────────────────────────────────────────────────

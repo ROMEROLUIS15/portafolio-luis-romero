@@ -11,6 +11,13 @@
  * a portfolio is already an open door — nobody needs permission to send an
  * offer — so the text gives the channel and qualifies nothing.
  *
+ * The city is stated here as well as in the CV, for the same reason the start
+ * date is: the CV carries "Mérida, Venezuela" only in its header chunk, which
+ * loses the top-6 to a dozen chunks that all score ~0.81 on a location question
+ * — "¿dónde vives?" retrieved six chunks, none of them the header, and the
+ * agent answered that it did not have the detail. This chunk does rank on every
+ * phrasing of that question, so the fact is reachable from here.
+ *
  * Idempotent: deletes any prior rows for this source before inserting, so it is
  * safe to re-run and never duplicates rows.
  *
@@ -40,6 +47,7 @@ const CONTENT: Record<'es' | 'en', string> = {
   es:
     'Situación profesional de Luis Romero. Trabaja como Backend Developer en Complexity ' +
     '(Texas, Estados Unidos, remoto) desde julio de 2026, un equipo con el que está comprometido y donde disfruta lo que hace. ' +
+    'Luis vive en Mérida, Venezuela, y trabaja de forma remota; su ubicación, ciudad y país son esos. ' +
     'Su terreno es el desarrollo backend y la integración de IA en producción. ' +
     'Luis no publica información sobre su disponibilidad ni sobre si busca otro trabajo; ' +
     'cualquier propuesta o consulta la conversa directamente con quien se la plantea. ' +
@@ -47,6 +55,7 @@ const CONTENT: Record<'es' | 'en', string> = {
   en:
     "Luis Romero's professional situation. He works as a Backend Developer at Complexity " +
     '(Texas, United States, remote) since July 2026, a team he is committed to and where he enjoys the work. ' +
+    'Luis lives in Mérida, Venezuela, and works remotely; that is his location, his city and his country. ' +
     'His ground is backend development and shipping AI to production. ' +
     'Luis does not publish information about his availability or about whether he is looking for other work; ' +
     'any proposal or enquiry is discussed directly with whoever raises it. ' +

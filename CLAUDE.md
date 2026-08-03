@@ -78,9 +78,9 @@ asserting a system prompt that had since been rewritten) and passed while verify
 
 **`lib.ts` constants are the source of truth**, not the README (whose numbers have gone stale): similarity
 threshold `0.75`, max message `1000` chars, `RAG_MATCH_COUNT` 6, `MAX_CHUNK_CHARS` 2100, Groq models
-`openai/gpt-oss-120b` → `openai/gpt-oss-20b`, cache TTL 7 days. (Two stale copies say otherwise and are
-both wrong: the widget's `errorInvalidMsg` says "500 characters" while it enforces 1000, and
-`scripts/ingest.ts` still comments about a "1600-char cap" that is now 2100.)
+`openai/gpt-oss-120b` → `openai/gpt-oss-20b`, cache TTL 7 days. (One stale copy still says otherwise and is
+wrong: `scripts/ingest.ts` comments about a "1600-char cap" that is now 2100. The widget's `errorInvalidMsg`
+was a second one — it said "500 characters" while enforcing 1000 — and now states 1000 in both languages.)
 
 ### Request pipeline
 
@@ -91,7 +91,7 @@ CORS preflight → origin guard (403) → session token UUID v4 (400) → body v
   → embedding via the `embed` Edge Function (Supabase gte-small, 384 dims, free)
   → match_documents() RPC, top-6, language-prioritized then cosine
   → below threshold? FALLBACK without calling the LLM (cached — it's deterministic)
-  → buildSystemPrompt → callGroqWithFallback → stripMetaPrefix
+  → buildSystemPrompt → callGroqWithFallback → stripMetaPrefix → stripMarkdown
   → write cache + log (fire-and-forget) → { answer, sources }
 ```
 
@@ -103,9 +103,16 @@ empty completion (a reasoning model can burn the entire token budget on chain-of
 the next. Only if every model is rate-limited does the request degrade to `BUSY_MESSAGE` — returned with
 HTTP 200 and deliberately *not* cached.
 
-`stripMetaPrefix` is a deterministic safety net for models that ignore the prompt and open with "Based on the
-provided context…". The system prompt also forbids markdown, because the widget renders answers verbatim as
-text.
+`stripMetaPrefix` and `stripMarkdown` are deterministic safety nets for models that ignore the prompt — one
+for answers opening with "Based on the provided context…", the other for the markdown both prompts forbid and
+gpt-oss emits anyway (a production answer read `**Motosmax Cordialidad**`; the widget renders answers verbatim
+as `textContent`, so the asterisks are what the visitor sees). `stripMarkdown` iterates to a fixed point, so
+it is idempotent, and every rule needs a matched pair or a line-start anchor — `17*23`, `chat_logs` and
+`gpt-oss-120b` come out untouched.
+
+A poisoned answer outlives the fix by up to the 7-day cache TTL. After changing anything that shapes the
+answer text, sweep `chat_cache` for rows that still carry the old shape and delete them by `cache_key`; nine
+of forty-three rows had to go on the markdown fix alone.
 
 ### The pipeline fails open — HTTP 200 proves nothing
 
@@ -126,6 +133,11 @@ pipeline — embedding, vector search, prompt, model — in four layers:
   the prompt: when Luis moved to Complexity, "where does he work?" kept answering with client projects
   because `match_documents` never surfaced the right chunk. **When a CV fact changes, add or update a case
   here** — a prompt-level evaluator would pass that bug.
+  **Phrase cases the way visitors actually type**, which is the second person, addressing the assistant as if
+  it were Luis. Every case here asked "Donde vive Luis?" and passed while "¿Cuál es tu ubicación?" was
+  answered with the off-topic guard-rail ("solo puedo ayudar con información sobre Luis") — the retrieval was
+  fine, the model just read "tu" as being about itself. Both prompts now say those questions are about Luis,
+  and the table carries two second-person cases.
 - **Availability**: see the product decision below. `declaresAvailability()` splits into sentences and drops
   negated ones; a flat regex fails the *correct* answer, since it contains the same words.
 - **LLM-as-judge**: two cases only, for what a regex cannot decide (does the answer actually answer). Uses
@@ -199,12 +211,31 @@ out of the top 6 entirely, and the agent knew where he worked but not since when
 load-bearing — a fact only reachable from a chunk that retrieval never returns is a fact the agent does not
 have.
 
+For the same reason it now also carries the **city (Mérida, Venezuela)**. The CV states it once, in its
+header chunk, which loses: on this corpus a short Spanish question scores every chunk within ~0.03 of every
+other (0.80–0.83 against a 0.75 threshold), so the top-6 is close to arbitrary and phrasing decides it.
+"¿Dónde vives actualmente?" retrieved six chunks, none of them the header, and the agent answered that it
+didn't have the detail — while "¿En dónde estás ubicado?" answered correctly. **When a fact reads as missing
+from one phrasing and present from another, that is retrieval, not the prompt**: measure it by embedding the
+question and calling `match_documents` directly before changing anything else.
+
 ### Frontend
 
 `index.html` (EN) and `spanish/index.html` (ES) are parallel full copies of the same page — **any content or
 markup change must be mirrored in both**. The Spanish page references assets with `../` prefixes. Language is
 never stored: everything derives from `document.documentElement.lang`, and the widget reads it at the exact
 moment of send (a verified correctness property — see Property 13 in the tests).
+
+The widget's two failure messages are not interchangeable. `fallback` ("the agent is currently unavailable",
+with the email) is only for an HTTP 5xx — the agent really did answer badly. Anything else that lands in the
+`catch` (a rejected `fetch`, an abort) never completed a round trip and gets `errorNetwork`, which points at
+the connection. Both used to print `fallback`, and a real conversation showed it four times while the Edge
+Function logs proved the agent was healthy every time: three of those requests never reached Supabase at all
+(no preflight, no POST) and the fourth was served in 1181 ms, logged, and its response simply never got back
+to the browser. **A visitor-reported "the agent is down" is not evidence the agent was down** — check
+`function_edge_logs` through the Management API for the minute in question before touching the pipeline.
+`requestTimeoutMs` is 20 s for the same reason: the function's own `response_time_ms` starts inside the
+handler, so a cold isolate boot is invisible in the logs and fully counted by the client.
 
 Both pages inline `window.__CHAT_ENDPOINT__` and `window.__CHAT_ANON_KEY__` before loading
 `assets/js/chat-widget.js`. The anon/publishable key is in the HTML by design — it's browser-facing and

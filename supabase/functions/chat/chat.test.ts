@@ -43,6 +43,7 @@ import {
   normalizeMessage,
   sha256hex,
   shouldUseFallback,
+  stripMarkdown,
   stripMetaPrefix,
   type ChunkResult,
 } from './lib.ts';
@@ -286,6 +287,74 @@ Deno.test('stripMetaPrefix — never returns an empty string', () => {
       if (s.trim().length > 0) assert(out.length > 0);
     }),
     { numRuns: 100 }
+  );
+});
+
+// ─── stripMarkdown ────────────────────────────────────────────────────────────
+// The widget renders answers as textContent, so any marker the model emits is
+// shown literally. A production answer read "**Motosmax Cordialidad**".
+
+Deno.test('stripMarkdown — removes the syntax the model actually emits', () => {
+  const cases: Array<[string, string]> = [
+    ['El proyecto más reciente es **Motosmax Cordialidad**.', 'El proyecto más reciente es Motosmax Cordialidad.'],
+    ['Luis usa __Deno__ en producción.', 'Luis usa Deno en producción.'],
+    ['Trabaja con *TypeScript* a diario.', 'Trabaja con TypeScript a diario.'],
+    ['## Experiencia\nBackend Developer.', 'Experiencia\nBackend Developer.'],
+    ['- Cronix\n- Kiura', 'Cronix\nKiura'],
+    ['* Cronix\n* Kiura', 'Cronix\nKiura'],
+    ['Usa `pgvector` con HNSW.', 'Usa pgvector con HNSW.'],
+    ['```ts\nconst x = 1;\n```', 'const x = 1;\n'],
+    ['> Cita del CV', 'Cita del CV'],
+    ['Su perfil: [LinkedIn](https://linkedin.com/in/luis)', 'Su perfil: LinkedIn (https://linkedin.com/in/luis)'],
+  ];
+  for (const [input, expected] of cases) {
+    assertEquals(stripMarkdown(input), expected, `failed on: ${JSON.stringify(input)}`);
+  }
+});
+
+Deno.test('stripMarkdown — leaves prose that merely contains the characters', () => {
+  for (const clean of [
+    // Unpaired markers are punctuation, not markdown.
+    'El cálculo es 17*23 y no 17+23.',
+    'Las tablas son chat_logs y rate_limits.',
+    'El modelo es openai/gpt-oss-120b.',
+    'lueduar15@gmail.com es su correo.',
+    'linkedin.com/in/luis-romero-dev-back15',
+    'Escribe a +58 424 709 2980 (WhatsApp).',
+    'Un asterisco suelto * no abre nada.',
+    'La nota decía: 5 - 3 = 2.',
+  ]) {
+    assertEquals(stripMarkdown(clean), clean, `mangled: ${clean}`);
+  }
+});
+
+Deno.test('stripMarkdown — the output never contains markdown the e2e test rejects', () => {
+  // Same assertion the deployed-agent eval makes, applied to arbitrary input:
+  // whatever the model emits, what leaves the function is clean.
+  const MARKDOWN = /\*\*|^#{1,6}\s|^\s*[-*]\s/m;
+  fc.assert(
+    fc.property(
+      fc.array(
+        fc.oneof(
+          fc.constant('**'),
+          fc.constant('## '),
+          fc.constant('- '),
+          fc.constant('* '),
+          fc.constant('`'),
+          fc.constant('texto'),
+          fc.constant('\n'),
+          fc.constant(' '),
+        ),
+        { maxLength: 24 },
+      ),
+      (parts) => {
+        const out = stripMarkdown(parts.join(''));
+        assert(!MARKDOWN.test(out), `markdown survived: ${JSON.stringify(out)}`);
+        // Idempotent: running it again changes nothing.
+        assertEquals(stripMarkdown(out), out);
+      },
+    ),
+    { numRuns: 300 },
   );
 });
 

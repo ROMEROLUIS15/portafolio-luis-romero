@@ -21,9 +21,14 @@
       : '';
 
   /** @readonly */
+  // `requestTimeoutMs` was 8000, which is under 5x the measured p50 and leaves
+  // nothing for a cold isolate boot — the Edge Function's own `response_time_ms`
+  // starts inside the handler, so boot time is invisible in the logs but very
+  // much counted here. Deployed latency, over the last 45 logged requests:
+  // p50 ~1.2s, max 2.2s.
   const CONFIG = Object.freeze({
     maxMessages:       20,
-    requestTimeoutMs:  8000,
+    requestTimeoutMs:  20000,
     retryDelaysMs:     [1000, 2000],
   });
 
@@ -60,8 +65,9 @@
         'What stack does Luis use for anti-hallucination systems?',
       ],
       fallback:        'Sorry, the agent is currently unavailable. You can reach me at lueduar15@gmail.com',
+      errorNetwork:    "I couldn't reach the agent — it looks like the connection dropped. Check your network and send the question again.",
       rateLimitMsg:    (secs) => `Too many requests. Please wait ${secs}s.`,
-      errorInvalidMsg: 'Invalid message. Please keep it under 500 characters.',
+      errorInvalidMsg: 'Invalid message. Please keep it under 1000 characters.',
       sendAriaLabel:   'Send message',
       waLabel:         'WhatsApp',
       waAria:          'Message Luis on WhatsApp',
@@ -80,8 +86,9 @@
         '¿Qué stack usa Luis para sistemas anti-alucinación?',
       ],
       fallback:        'Lo siento, el agente no está disponible. Puedes contactarme en lueduar15@gmail.com',
+      errorNetwork:    'No pude conectar con el asistente — parece que se cayó la conexión. Revisa tu red y vuelve a enviar la pregunta.',
       rateLimitMsg:    (secs) => `Demasiadas solicitudes. Por favor espera ${secs}s.`,
-      errorInvalidMsg: 'Mensaje inválido. Mantenlo bajo 500 caracteres.',
+      errorInvalidMsg: 'Mensaje inválido. Mantenlo bajo 1000 caracteres.',
       sendAriaLabel:   'Enviar mensaje',
       waLabel:         'WhatsApp',
       waAria:          'Escribir a Luis por WhatsApp',
@@ -615,6 +622,16 @@
 
     } catch (err) {
       clearTimeout(timeoutId);
+      // Only a 5xx proves the agent itself answered badly. A rejected fetch or an
+      // abort means the request never completed a round trip — the visitor's
+      // connection, a VPN hiccup, an extension. Both used to print "the agent is
+      // currently unavailable", which reads as "this site is broken" for what is
+      // usually a dropped connection, and hides the one thing the visitor could
+      // act on. Production logs for a conversation that showed that message four
+      // times: three of the requests never reached Supabase at all (no preflight,
+      // no POST), and the fourth was served in 1181 ms and logged — its response
+      // simply never made it back to the browser.
+      const isHttpError = /^HTTP \d{3}$/.test(err.message ?? '');
       console.error('[chat-widget] Request error:', err.name === 'AbortError' ? 'timeout' : err.message);
 
       if (attempt < CONFIG.retryDelaysMs.length) {
@@ -623,7 +640,7 @@
       }
 
       dom.typing?.remove(); dom.typing = null;
-      addMessage('assistant', t('fallback'), { error: true });
+      addMessage('assistant', isHttpError ? t('fallback') : t('errorNetwork'), { error: true });
       state.isLoading = false;
       setInputDisabled(false);
     }

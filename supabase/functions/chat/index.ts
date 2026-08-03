@@ -27,6 +27,7 @@ import {
   normalizeLang,
   sha256hex,
   shouldUseFallback,
+  stripMarkdown,
   stripMetaPrefix,
   type ChunkResult,
   type Lang,
@@ -271,8 +272,10 @@ async function runRagPipeline(
 
   let answer: string;
   try {
-    answer = stripMetaPrefix(
-      await callGroqWithFallback(systemPrompt, message, { apiKey: ENV.groqApiKey })
+    answer = stripMarkdown(
+      stripMetaPrefix(
+        await callGroqWithFallback(systemPrompt, message, { apiKey: ENV.groqApiKey })
+      )
     );
   } catch (err) {
     if (err instanceof GroqRateLimitError) {
