@@ -15,15 +15,16 @@ the provider APIs.
 ## Commands
 
 ```bash
-npm test                 # Widget tests — Vitest + jsdom + fast-check (27 tests)
+npm test                 # Widget tests — Vitest + jsdom + fast-check (30 tests)
 npm run test:watch       # Same, in watch mode
-npm run test:edge        # Edge Function unit + property tests — Deno, over lib.ts (33 tests)
+npm run test:edge        # Edge Function unit + property tests — Deno, over lib.ts (43 tests)
 npm run test:db          # pgTAP RLS tests — requires Docker + `supabase start` first
-npm run test:e2e         # Agent evaluation against the deployed project (see below) — 15 tests
+npm run test:e2e         # Agent evaluation against the deployed project (see below) — 29 tests
 npm run test:all         # test + test:edge + test:db
 
 npm run ingest           # Rebuild the vector store from the CV markdown + cronix-stats.json
 npm run seed:availability  # Idempotent: (re)insert the availability fact
+npm run seed:contact       # Idempotent: (re)insert the contact/social links fact
 npm run dedupe           # Remove duplicate rows from `documents`
 
 npm run deploy:chat      # supabase functions deploy chat  --no-verify-jwt
@@ -173,7 +174,7 @@ case skips; keep that guard, and read the counts, not the colour.
 
 **Neither run is complete on its own, so a full evaluation is two commands.** The runner cannot execute the
 `chat_logs` case (no `service_role` key) and Luis's machine cannot execute the two judges (Groq 403s his VPN),
-so CI covers 26 of 27 and the local run covers 26 of 27 — a different 26. The one CI misses is the one that
+so CI covers 28 of 29 and the local run covers 28 of 29 — a different 28. The one CI misses is the one that
 proves the pipeline is not failing open, which is the most consequential assertion in the file, so pair the
 workflow with:
 
@@ -233,13 +234,13 @@ span alone: a first draft appended "with the first phase in production" to it an
 the first phase "reached production after three months", which the CV never said.
 
 `ingest.ts` is idempotent: it deletes the existing rows for each source before inserting the new chunks, so
-re-running it is safe and does not duplicate. `seed-availability.ts` behaves the same way. `npm run dedupe`
-exists because an earlier version of the ingest used plain INSERTs and left duplicates behind; it is a repair
-tool, not a required follow-up step.
+re-running it is safe and does not duplicate. `seed-availability.ts` and `seed-contact.ts` behave the same
+way. `npm run dedupe` exists because an earlier version of the ingest used plain INSERTs and left duplicates
+behind; it is a repair tool, not a required follow-up step.
 
 Note that ingest only clears the sources it is about to write. Rows from other sources — currently
-`profile-availability`, inserted by `seed-availability.ts` — survive a re-ingest and must be maintained
-separately.
+`profile-availability` (`seed-availability.ts`) and `profile-contact` (`seed-contact.ts`) — survive a
+re-ingest and must be maintained separately.
 
 ### The agent must never declare availability
 
@@ -263,6 +264,27 @@ other (0.80–0.83 against a 0.75 threshold), so the top-6 is close to arbitrary
 didn't have the detail — while "¿En dónde estás ubicado?" answered correctly. **When a fact reads as missing
 from one phrasing and present from another, that is retrieval, not the prompt**: measure it by embedding the
 question and calling `match_documents` directly before changing anything else.
+
+The **`profile-contact` seed (`npm run seed:contact`) is the same fix applied to the links** — LinkedIn,
+GitHub, portfolio, email, WhatsApp. They lived only in the CV header chunk, which loses the same way: of
+thirteen phrasings measured against the live store, four returned six chunks with the URL in none of them
+("¿Cuál es tu LinkedIn?", "What is your LinkedIn?", "What is your LinkedIn profile?", "What are your social
+profiles?") and the agent answered that it didn't have the detail, while "¿Cuál es el LinkedIn de Luis?"
+answered correctly throughout. With the seed all thirteen retrieve it at rank 1. Two second-person cases in
+`e2e.test.ts` guard it.
+
+Two things about that seed are deliberate. Its closing sentence names the second-person phrasings ("tu
+LinkedIn", "your LinkedIn profile") because lexical overlap is what decides a top-6 where everything scores
+within ~0.03 — but it is phrased as a statement of who those words refer to, **never as an instruction**: a
+retrieved document that tells the model what to do can leak verbatim into the answer. And it carries no
+availability wording, for the reason above. The chunk does enter the top-6 on some employment and location
+questions it has no business answering; that was measured and left alone, because the chunk it displaces is
+the sixth and `profile-availability` still ranks first on every one of them. Re-measure that if the corpus
+grows.
+
+**Changing the corpus invalidates cached "I don't know" answers too.** The four failing phrasings above had
+their `FALLBACK` stored in `chat_cache`, so seeding the fact fixed retrieval and changed nothing a visitor
+saw for up to seven days. Sweep answers matching the fallback copy alongside the ones matching the old fact.
 
 ### Frontend
 

@@ -13,6 +13,7 @@
     "test:all": "npm run test && npm run test:edge && npm run test:db",
     "ingest": "deno run --allow-read --allow-net --allow-env scripts/ingest.ts",
     "seed:availability": "deno run --allow-net --allow-env scripts/seed-availability.ts",
+    "seed:contact": "deno run --allow-net --allow-env scripts/seed-contact.ts",
     "dedupe": "deno run --allow-net --allow-env scripts/dedupe-documents.ts",
     "deploy:chat": "supabase functions deploy chat --project-ref dsrxcqjivhvhvpqumcvb --no-verify-jwt",
     "deploy:embed": "supabase functions deploy embed --project-ref dsrxcqjivhvhvpqumcvb",
