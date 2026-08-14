@@ -148,7 +148,7 @@
         { t: 'empty' },
         { t: 'output', v: '  Email      lueduar15@gmail.com' },
         { t: 'output', v: '  WhatsApp   +58 424 709 2980' },
-        { t: 'output', v: '  LinkedIn   linkedin.com/in/luis-romero-dev-back15' },
+        { t: 'output', v: '  LinkedIn   linkedin.com/in/hernandezrs955' },
         { t: 'output', v: '  GitHub     github.com/ROMEROLUIS15' },
         { t: 'output', v: '  Cronix     cronix-app.vercel.app' },
         { t: 'empty' },
@@ -307,7 +307,7 @@
         { t: 'empty' },
         { t: 'output', v: '  Correo     lueduar15@gmail.com' },
         { t: 'output', v: '  WhatsApp   +58 424 709 2980' },
-        { t: 'output', v: '  LinkedIn   linkedin.com/in/luis-romero-dev-back15' },
+        { t: 'output', v: '  LinkedIn   linkedin.com/in/hernandezrs955' },
         { t: 'output', v: '  GitHub     github.com/ROMEROLUIS15' },
         { t: 'output', v: '  Cronix     cronix-app.vercel.app' },
         { t: 'empty' },
@@ -328,7 +328,7 @@
 
   const links = {
     github:   'https://github.com/ROMEROLUIS15',
-    linkedin: 'https://www.linkedin.com/in/luis-romero-dev-back15',
+    linkedin: 'https://www.linkedin.com/in/hernandezrs955',
     cronix:   'https://cronix-app.vercel.app',
     whatsapp: 'https://wa.me/584247092980',
   };

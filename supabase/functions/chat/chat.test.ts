@@ -239,7 +239,7 @@ Deno.test('stripMetaPrefix — leaves clean answers untouched', () => {
     'According to Luis, Deno is great.', // "According to Luis" is not a meta lead-in
     // Regression: recapitalisation used to run even when nothing was stripped,
     // so an answer that is just a link came back as "Linkedin.com/…".
-    'linkedin.com/in/luis-romero-dev-back15',
+    'linkedin.com/in/hernandezrs955',
     'lueduar15@gmail.com es su correo.',
     'pgvector con índice HNSW.',
   ]) {
@@ -254,8 +254,8 @@ Deno.test('stripMetaPrefix — a stripped lead-in never recapitalises a link or 
       'lueduar15@gmail.com es su correo.',
     ],
     [
-      'Based on the provided context, linkedin.com/in/luis-romero-dev-back15 is his profile.',
-      'linkedin.com/in/luis-romero-dev-back15 is his profile.',
+      'Based on the provided context, linkedin.com/in/hernandezrs955 is his profile.',
+      'linkedin.com/in/hernandezrs955 is his profile.',
     ],
     [
       'According to the information, https://cronix-app.vercel.app is the demo.',
@@ -322,7 +322,7 @@ Deno.test('stripMarkdown — leaves prose that merely contains the characters', 
     'Las tablas son chat_logs y rate_limits.',
     'El modelo es openai/gpt-oss-120b.',
     'lueduar15@gmail.com es su correo.',
-    'linkedin.com/in/luis-romero-dev-back15',
+    'linkedin.com/in/hernandezrs955',
     'Escribe a +58 424 709 2980 (WhatsApp).',
     'Un asterisco suelto * no abre nada.',
     'La nota decía: 5 - 3 = 2.',

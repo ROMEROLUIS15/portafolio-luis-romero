@@ -710,7 +710,7 @@ nav.scrolled {
   flex-shrink: 0;
 }
 .contact-icon i { font-size: 16px; color: var(--accent); }
-/* min-width: 0 stops the longest value — the 38-char LinkedIn URL, which has no
+/* min-width: 0 stops the longest value — the LinkedIn URL, which has no
    break opportunity — from setting the min-content width of the whole contact
    column and pushing both cards past a 320px screen. */
 .contact-detail { min-width: 0; }

@@ -270,8 +270,28 @@ const GROUNDING: GroundingCase[] = [
     name:         'linkedin url is the current one',
     ask:          'Cual es el LinkedIn de Luis?',
     lang:         'es',
-    mustMatch:    /luis-romero-dev-back15/i,
-    mustNotMatch: /15-luis-romero|luisromero15/i,
+    mustMatch:    /hernandezrs955/i,
+    mustNotMatch: /luis-romero-dev-back15|15-luis-romero|luisromero15/i,
+  },
+  // The third-person case above passed while both of these failed. The URL lived
+  // in exactly one chunk — the CV header — and it lost the top-6 on the phrasings
+  // visitors actually use: "¿Cuál es tu LinkedIn?" and "What is your LinkedIn?"
+  // both retrieved six chunks with the URL in none of them, and the agent said it
+  // didn't have the detail. The profile-contact chunk carries the links for that
+  // reason, the same way profile-availability carries the city.
+  {
+    name:         'linkedin url, asked in the second person (es)',
+    ask:          'Cual es tu LinkedIn?',
+    lang:         'es',
+    mustMatch:    /hernandezrs955/i,
+    mustNotMatch: /luis-romero-dev-back15|no tengo ese detalle|no tengo esa informaci[oó]n|solo puedo ayudar/i,
+  },
+  {
+    name:         'linkedin url, asked in the second person (en)',
+    ask:          'What is your LinkedIn profile?',
+    lang:         'en',
+    mustMatch:    /hernandezrs955/i,
+    mustNotMatch: /luis-romero-dev-back15|don.t have that detail|can only help/i,
   },
   {
     name:         'location moved to Venezuela',
