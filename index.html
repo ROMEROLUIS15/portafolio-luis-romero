@@ -73,7 +73,7 @@
           <span class="typedText"></span>
         </p>
         <p class="hero-description reveal">
-          Backend Developer &amp; AI Engineer with 3 years shipping AI products to production — and keeping
+          Backend Developer &amp; AI Engineer with 3+ years shipping AI products to production — and keeping
           them running there. I build backend at <strong>Complexity</strong> (Texas, US) and founded
           <strong>Cronix</strong>, a 24/7 multi-tenant SaaS managing 250+ real appointments autonomously.
           My work isn't plugging in an LLM: it's designing the controls that stop it from inventing data,
@@ -81,7 +81,7 @@
         </p>
         <div class="hero-stats reveal">
           <div class="stat-item">
-            <span class="stat-number">3</span>
+            <span class="stat-number">3+</span>
             <span class="stat-label">Years experience</span>
           </div>
           <div class="stat-item">
@@ -278,19 +278,18 @@
                 <div class="timeline-role">Software Development Lead <span class="role-prev">· Backend / Full-Stack Developer</span></div>
                 <div class="timeline-company">IBIME Connect — Public Library Network Platform</div>
               </div>
-              <span class="timeline-date">Jan 2025 – Jul 2026</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Built the AI assistant a public library network uses to answer citizens' queries, inside the platform that replaced their legacy system. The institution adopted it as its official platform and, on the back of that delivery, appointed me Software Development Lead (May – Jul 2026).</li>
+              <li>Built the AI assistant a public library network uses to answer citizens' queries, inside the new platform built to replace their legacy website. The institution adopted it as its official platform and, on the back of that delivery, appointed me Software Development Lead.</li>
               <li>Stopped the assistant from making up answers by keeping the model out of the decision flow: a rule-based intent classifier (no LLM) routes the conversation, and when the citizen's email is already known the answer comes straight from the database — less cost, less latency, and no opportunity to hallucinate.</li>
               <li>Implemented RAG and semantic search over the institution's documents: PostgreSQL + pgvector with 768-dim Gemini embeddings, inference on Groq configurable per environment, Redis embedding cache, and a match threshold that prefers not answering over answering badly.</li>
               <li>Built a stateful LangGraph agent (extractor, validator, corrector with bounded retries) that turns catalog PDFs into structured, validated data, discarding duplicates by content.</li>
-              <li>Hardened the platform for citizens' personal data: blocked anonymous writes on sensitive tables (RLS), prevented duplicate registrations and defined retention and deletion. Hexagonal architecture with dependency injection, structured logs and Sentry; 420+ tests in CI.</li>
+              <li>Hardened the platform for citizens' personal data: blocked anonymous writes on sensitive tables (RLS), prevented duplicate registrations and drafted a data retention and deletion policy. Layered API with dependency injection, a hexagonal assistant module and structured logs traced by request ID; 670+ tests in CI.</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">LangGraph</span>
               <span class="tag">RAG</span><span class="tag">pgvector</span><span class="tag">Redis</span>
-              <span class="tag">PostgreSQL</span><span class="tag">Next.js 15</span><span class="tag">Sentry</span>
+              <span class="tag">PostgreSQL</span><span class="tag">React</span><span class="tag">Express</span>
             </div>
           </div>
         </div>
@@ -431,11 +430,11 @@
             <p class="project-desc">
               Institutional digital platform for a public library network with a conversational AI assistant.
               5-layer anti-hallucination chat engine, semantic search on pgvector, Redis cache, stateful LangGraph
-              agent that parses catalog PDFs into validated JSON. 420+ tests (Vitest + Playwright).
+              agent that parses catalog PDFs into validated JSON. 670+ tests (Vitest + Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">pgvector</span><span class="tag">Gemini</span>
-              <span class="tag">Next.js 15</span><span class="tag">Redis</span><span class="tag">Zod</span>
+              <span class="tag">React</span><span class="tag">Redis</span><span class="tag">Zod</span>
             </div>
             <div class="project-links">
               <a href="https://ibime-connect.vercel.app/" target="_blank" rel="noopener" class="btn-live"><i class="uil uil-external-link-alt"></i> Live Demo</a>

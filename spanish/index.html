@@ -73,7 +73,7 @@
           <span class="typedText"></span>
         </p>
         <p class="hero-description reveal">
-          Backend Developer y AI Engineer con 3 años llevando productos de IA a producción — y manteniéndolos
+          Backend Developer y AI Engineer con más de 3 años llevando productos de IA a producción — y manteniéndolos
           ahí. Construyo backend en <strong>Complexity</strong> (Texas, EE. UU.) y fundé <strong>Cronix</strong>,
           un SaaS multi-tenant 24/7 que gestiona 250+ citas reales de forma autónoma. Mi trabajo no es enchufar
           un LLM: es diseñar los controles que evitan que invente datos, y medir su fiabilidad en lugar de
@@ -81,7 +81,7 @@
         </p>
         <div class="hero-stats reveal">
           <div class="stat-item">
-            <span class="stat-number">3</span>
+            <span class="stat-number">3+</span>
             <span class="stat-label">Años de experiencia</span>
           </div>
           <div class="stat-item">
@@ -278,19 +278,18 @@
                 <div class="timeline-role">Software Development Lead <span class="role-prev">· Backend / Full-Stack Developer</span></div>
                 <div class="timeline-company">IBIME Connect — Plataforma institucional</div>
               </div>
-              <span class="timeline-date">Ene 2025 – Jul 2026</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Construí el asistente de IA con el que una red pública de bibliotecas responde las consultas de la ciudadanía, dentro de la plataforma que reemplazó su sistema legacy. La institución la adoptó como plataforma oficial y, a raíz de esa entrega, me nombró Software Development Lead (May – Jul 2026).</li>
+              <li>Construí el asistente de IA con el que una red pública de bibliotecas responde las consultas de la ciudadanía, dentro de la nueva plataforma que sustituirá su sitio anterior. La institución la adoptó como plataforma oficial y, a raíz de esa entrega, me nombró Software Development Lead.</li>
               <li>Evité que el asistente inventara respuestas manteniendo el modelo fuera del flujo de decisión: un clasificador de intención por reglas (sin LLM) enruta la conversación, y cuando el correo del ciudadano ya se conoce la respuesta sale directo de la base de datos — menos costo, menos latencia y ninguna oportunidad de alucinar.</li>
               <li>Implementé RAG y búsqueda semántica sobre los documentos de la institución: PostgreSQL + pgvector con embeddings Gemini de 768 dimensiones, inferencia en Groq configurable por entorno, caché de embeddings en Redis y un umbral de coincidencia que prefiere no responder antes que responder mal.</li>
               <li>Construí un agente LangGraph con estado (extractor, validador y corrector, con reintentos acotados) que convierte los PDFs de catálogo en datos estructurados y validados, descartando duplicados por contenido.</li>
-              <li>Endurecí la plataforma para el manejo de datos personales: bloqueé escrituras anónimas en tablas sensibles (RLS), evité registros duplicados y definí retención y borrado. Arquitectura hexagonal con inyección de dependencias, logs estructurados y Sentry; 420+ tests en CI.</li>
+              <li>Endurecí la plataforma para el manejo de datos personales: bloqueé escrituras anónimas en tablas sensibles (RLS), evité registros duplicados y redacté una propuesta de política de retención y borrado. API en capas con inyección de dependencias, módulo del asistente con arquitectura hexagonal y logs estructurados con ID de petición; 670+ tests en CI.</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">LangGraph</span>
               <span class="tag">RAG</span><span class="tag">pgvector</span><span class="tag">Redis</span>
-              <span class="tag">PostgreSQL</span><span class="tag">Next.js 15</span><span class="tag">Sentry</span>
+              <span class="tag">PostgreSQL</span><span class="tag">React</span><span class="tag">Express</span>
             </div>
           </div>
         </div>
@@ -419,11 +418,11 @@
             <p class="project-desc">
               Plataforma digital institucional para una red pública de bibliotecas con asistente conversacional de IA.
               Motor de chat anti-alucinación de 5 capas, búsqueda semántica en pgvector, caché Redis, y agente LangGraph
-              con estado que parsea PDFs de catálogo en JSON validado. 420+ tests (Vitest + Playwright).
+              con estado que parsea PDFs de catálogo en JSON validado. 670+ tests (Vitest + Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">pgvector</span><span class="tag">Gemini</span>
-              <span class="tag">Next.js 15</span><span class="tag">Redis</span><span class="tag">Zod</span>
+              <span class="tag">React</span><span class="tag">Redis</span><span class="tag">Zod</span>
             </div>
             <div class="project-links">
               <a href="https://ibime-connect.vercel.app/" target="_blank" rel="noopener" class="btn-live"><i class="uil uil-external-link-alt"></i> Demo en vivo</a>
