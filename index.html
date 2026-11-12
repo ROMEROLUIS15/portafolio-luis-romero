@@ -133,12 +133,14 @@
           <p>
             I'm a <span class="highlight">Backend Developer &amp; AI Engineer</span> based in Mérida, Venezuela.
             I started as a self-taught developer on freeCodeCamp and official docs, then deepened my skills
-            at the Academlo Full-Stack Bootcamp — where I discovered a strong focus on backend architecture.
+            at the Academlo Full-Stack Bootcamp — where I discovered a strong focus on backend architecture —
+            and in October 2026 graduated in <span class="highlight">Computer Systems Engineering</span>.
           </p>
           <p>
             Today I build backend at <span class="highlight">Complexity</span>, a software company in Texas,
-            where I audited the product's backend, had my remediation plan approved and am running it end to
-            end — while defining how the team ships: spec-driven development with traceability from ticket to PR.
+            where I audited the product's backend, had my remediation plan approved and led it to completion
+            without pausing the roadmap — and designed the AI agent harness and the quality pipeline the work
+            ships through: spec-driven development, evidence behind every claim, every PR fully validated in ~6 minutes.
           </p>
           <p>
             Alongside that I build and operate AI systems with real users every day. I founded
@@ -170,12 +172,32 @@
               <span class="pill">LangChain</span>
               <span class="pill">DeepEval</span>
               <span class="pill">LangSmith</span>
+              <span class="pill">Langfuse</span>
+              <span class="pill">Structured Outputs</span>
+              <span class="pill">Vercel AI SDK</span>
               <span class="pill">MCP</span>
               <span class="pill">Voice AI</span>
+              <span class="pill">Pipecat / Pipecat Flows</span>
+              <span class="pill">WebRTC</span>
+              <span class="pill">STT / TTS</span>
+              <span class="pill">OpenRouter</span>
               <span class="pill">Groq</span>
               <span class="pill">DeepSeek</span>
               <span class="pill">Gemini</span>
               <span class="pill">Deepgram</span>
+            </div>
+          </div>
+          <div class="skills-category">
+            <div class="skills-category-title">Harness Engineering</div>
+            <div class="skills-pills">
+              <span class="pill featured">Claude Code</span>
+              <span class="pill featured">Codex</span>
+              <span class="pill">Orca</span>
+              <span class="pill">Gentle AI</span>
+              <span class="pill">Engram</span>
+              <span class="pill">MCP</span>
+              <span class="pill">Multi-agent orchestration</span>
+              <span class="pill">Context Engineering</span>
             </div>
           </div>
           <div class="skills-category">
@@ -204,6 +226,7 @@
               <span class="pill">Neon</span>
               <span class="pill">REST / OpenAPI</span>
               <span class="pill">Queues (BullMQ, QStash)</span>
+              <span class="pill">Resend</span>
               <span class="pill">Hexagonal Architecture</span>
               <span class="pill">Row-Level Security</span>
               <span class="pill">Multi-tenant</span>
@@ -214,6 +237,11 @@
             <div class="skills-pills">
               <span class="pill featured">CI/CD</span>
               <span class="pill featured">Spec-Driven Development</span>
+              <span class="pill featured">AWS</span>
+              <span class="pill">EC2 / S3 / ECR</span>
+              <span class="pill">CloudWatch</span>
+              <span class="pill">Secrets Manager</span>
+              <span class="pill">RDS</span>
               <span class="pill">Docker</span>
               <span class="pill">Sentry</span>
               <span class="pill">OpenTelemetry</span>
@@ -254,15 +282,19 @@
               <span class="timeline-date">Jul 2026 – Present</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Backend for a mobile application: versioned REST API with OpenAPI, real-time over WebSockets, background job queues and full-text search, on a modular monolith of 26 domain modules (NestJS, PostgreSQL/TypeORM, Redis, Elasticsearch).</li>
-              <li>Joined the team after passing their technical challenge — a search and discovery engine for a real product problem, delivered deployed, documented with OpenAPI and security-scanned in CI.</li>
-              <li>Audited the backend, presented my findings to the team and had my remediation plan approved; I'm running it end to end. Exposure risks first: stripped sensitive data out of responses and logs, moved hardcoded credentials into configuration validated at startup, closed off the docs in production, and repaired seven test suites that no longer compiled.</li>
-              <li>Defined how the team works: spec-driven development with traceability from ticket to PR, branch and commit conventions, a PR template with a review budget that counts hand-written and generated code separately, and a CI workflow that enforces branch policy and independent review — a plan broken into ~150 scoped changes.</li>
+              <li>Project Factory: backend of a B2B company-directory platform and of its admin panel, with a mobile app — REST API, real time over WebSockets, job queues, full-text search and AI agents (NestJS, PostgreSQL, Redis/BullMQ, Elasticsearch, AWS).</li>
+              <li>Audited the backend when I joined, presented the findings and got my remediation plan approved, which I led to completion without pausing the roadmap: removed improper coupling between modules, cut circular dependencies from 31 to 0 and moved business logic into 330 use cases on a hexagonal architecture.</li>
+              <li>Designed the AI agent harness I work with — numbered rules the code itself cites, architecture and quality gates, and a check that asks for evidence behind every claim the agent makes (Orca, Gentle AI, MCP, Spec-Driven Development). With it I planned the work in 700+ tickets and delivered 1,050+ merged pull requests and 20+ production releases in three months, reviewing and approving every change.</li>
+              <li>Built the quality and security pipeline from scratch: when I joined, no pull request ran any tests. Today every change goes through strict typing, unit, integration and end-to-end tests, security scanning (SAST/SCA, secrets) and architecture rules, and a full PR is validated in ~6 min. Unit tests grew from 20 to 1,000+ suites.</li>
+              <li>Led the backend of "claim your company" end to end — the product's go-to-market program, now in production — fed by an AI-assisted loading flow where an agent builds company profiles and product drafts that nobody publishes without human approval.</li>
+              <li>Designed an AI extraction engine where every value carries the quote from its source, two models must agree and code, not the model, decides what gets stored; quality is measured with evals against the human reviewer's decision and traces in Langfuse. It nearly tripled category classification precision.</li>
+              <li>Took PostgreSQL row-level security to production: from 0 to 63 enforced tables in three reversible waves, with pgTAP tests that block the merge. Resolved an urgent personal-data exposure report in under 4 hours and operated AWS deployments (EC2, CloudWatch, Secrets Manager).</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">NestJS</span><span class="tag">TypeScript</span><span class="tag">PostgreSQL</span>
-              <span class="tag">TypeORM</span><span class="tag">Elasticsearch</span><span class="tag">Redis</span>
-              <span class="tag">WebSockets</span><span class="tag">OpenAPI</span><span class="tag">Security Auditing</span>
+              <span class="tag">Redis / BullMQ</span><span class="tag">Elasticsearch</span><span class="tag">AWS</span>
+              <span class="tag">WebSockets</span><span class="tag">Langfuse</span><span class="tag">pgTAP</span>
+              <span class="tag">Hexagonal Architecture</span><span class="tag">Security Auditing</span>
             </div>
           </div>
         </div>
@@ -275,21 +307,25 @@
           <div class="timeline-content">
             <div class="timeline-header">
               <div>
-                <div class="timeline-role">Software Development Lead <span class="role-prev">· Backend / Full-Stack Developer</span></div>
-                <div class="timeline-company">IBIME Connect — Public Library Network Platform</div>
+                <div class="timeline-role">Software Development Lead <span class="role-prev">(Feb 2026 – Jul 2026) · Backend / Full-Stack Developer (Jan 2025 – Feb 2026)</span></div>
+                <div class="timeline-company">IBIME Connect — Public Library Network Platform (Remote)</div>
               </div>
+              <span class="timeline-date">Jan 2025 – Jul 2026</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Built the AI assistant a public library network uses to answer citizens' queries, inside the new platform built to replace their legacy website. The institution adopted it as its official platform and, on the back of that delivery, appointed me Software Development Lead.</li>
+              <li>Replaced a public library network's legacy HTML/CSS system with a complete digital platform, including an AI assistant that answers citizens' queries. The institution approved it, adopted it as its official platform and, on the back of that delivery, appointed me Software Development Lead.</li>
+              <li>Led software development for the institution: decided the stack and architecture, set the testing and quality standards, and prioritized the roadmap together with librarians and the IT team.</li>
+              <li>Built the React frontend on hexagonal architecture, with data validation shared between frontend and backend (Zod) so the contract cannot break silently.</li>
               <li>Stopped the assistant from making up answers by keeping the model out of the decision flow: a rule-based intent classifier (no LLM) routes the conversation, and when the citizen's email is already known the answer comes straight from the database — less cost, less latency, and no opportunity to hallucinate.</li>
               <li>Implemented RAG and semantic search over the institution's documents: PostgreSQL + pgvector with 768-dim Gemini embeddings, inference on Groq configurable per environment, Redis embedding cache, and a match threshold that prefers not answering over answering badly.</li>
               <li>Built a stateful LangGraph agent (extractor, validator, corrector with bounded retries) that turns catalog PDFs into structured, validated data, discarding duplicates by content.</li>
-              <li>Hardened the platform for citizens' personal data: blocked anonymous writes on sensitive tables (RLS), prevented duplicate registrations and drafted a data retention and deletion policy. Layered API with dependency injection, a hexagonal assistant module and structured logs traced by request ID; 670+ tests in CI.</li>
+              <li>Hardened the platform for citizens' personal data: blocked anonymous writes on sensitive tables (RLS), prevented duplicate registrations and drafted a data retention and deletion policy. Layered API with dependency injection, a hexagonal assistant module and structured logs traced by request ID; 700+ tests in CI (Vitest + Playwright).</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">LangGraph</span>
               <span class="tag">RAG</span><span class="tag">pgvector</span><span class="tag">Redis</span>
               <span class="tag">PostgreSQL</span><span class="tag">React</span><span class="tag">Express</span>
+              <span class="tag">Zod</span>
             </div>
           </div>
         </div>
@@ -316,6 +352,47 @@
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">Socket.IO</span>
               <span class="tag">MercadoPago</span><span class="tag">Agora RTC</span><span class="tag">MySQL</span>
               <span class="tag">JWT</span><span class="tag">OAuth 2.0</span><span class="tag">AWS RDS</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Education -->
+      <div class="top-header reveal" style="margin-top:56px">
+        <p class="section-label">Education</p>
+        <h2 class="section-title">Where I studied</h2>
+      </div>
+      <div class="timeline">
+
+        <div class="timeline-item reveal">
+          <div class="timeline-dot-col">
+            <div class="timeline-dot"></div>
+            <div class="line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <div class="timeline-role">Computer Systems Engineering</div>
+                <div class="timeline-company">UPTM Kleber Ramírez</div>
+              </div>
+              <span class="timeline-date">Graduated Oct 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div class="timeline-dot-col">
+            <div class="timeline-dot"></div>
+            <div class="line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <div class="timeline-role">Full-Stack Bootcamp</div>
+                <div class="timeline-company">Academlo</div>
+              </div>
+              <span class="timeline-date">Mar 2024</span>
             </div>
           </div>
         </div>
@@ -355,8 +432,14 @@
               24/7 in production with 250+ real appointments managed and automatic reminders via pg_cron — no human intervention.
               Custom AI orchestration engine (no framework) for WhatsApp &amp; voice with 12 capabilities, 6-layer anti-hallucination architecture,
               LLM-as-judge evaluation suite, multi-tenant tracing and 1,600+ tests.
+              The business owner runs it from a Next.js 15 dashboard installable as an app, with a real-time calendar,
+              financial summary, PDF reports and 6 languages. A real-time voice call agent (Python, Pipecat Flows,
+              Deepgram, WebRTC/Twilio) books into Cronix through a signed HMAC API with idempotency and a slot lock —
+              first token in 391 ms (p50), 1.00 on the golden dataset. I audited my own security, found a cross-tenant
+              hole in 13 database functions and closed it; 4 payment methods cannot double-charge.
             </p>
             <div class="project-tags">
+              <span class="tag">Next.js 15</span><span class="tag">Python</span><span class="tag">Pipecat Flows</span>
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">Deno</span>
               <span class="tag">Supabase</span><span class="tag">PostgreSQL RLS</span><span class="tag">Groq</span>
               <span class="tag">Deepgram</span><span class="tag">DeepEval</span><span class="tag">LangSmith</span>
@@ -394,7 +477,11 @@
               quotes, motorcycle sales and CRM, isolated per workshop. A Python microservice (FastAPI + LangGraph)
               runs two agents — one serving customers on WhatsApp, another assisting the back office with session
               memory, periodic reports and low-stock alerts — and reaches the NestJS API through credentials that
-              expire in 5 minutes, with sensitive fields encrypted. 400+ tests (Jest, pytest, Playwright).
+              expire in 5 minutes, with sensitive fields encrypted. Versioned quotes with client approval and PDF,
+              motorcycle sales with a payment plan and PDF contract; NestJS on a hexagonal architecture (37 Prisma
+              models) and a Next.js 15.5 / React 19 frontend installable as an app. Found and closed a privilege
+              escalation in production — a read-only role could change the workshop's configuration — fixed with
+              per-role permissions and pinned by a test. 400+ tests (Jest, Vitest, pytest, Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">Python</span><span class="tag">FastAPI</span><span class="tag">LangGraph</span>
@@ -430,7 +517,8 @@
             <p class="project-desc">
               Institutional digital platform for a public library network with a conversational AI assistant.
               5-layer anti-hallucination chat engine, semantic search on pgvector, Redis cache, stateful LangGraph
-              agent that parses catalog PDFs into validated JSON. 670+ tests (Vitest + Playwright).
+              agent that parses catalog PDFs into validated JSON, and a React frontend on hexagonal architecture
+              with Zod validation shared with the backend. 700+ tests (Vitest + Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">pgvector</span><span class="tag">Gemini</span>
@@ -464,12 +552,15 @@
             <p class="project-desc">
               End-to-end CMMS (52 REST endpoints / 11 data models) replacing paper inspection sheets for an
               industrial maintenance company. AI assistant with multi-agent orchestration (LangGraph), RAG over
-              report history, and a React 19 PWA with offline mode (IndexedDB + Background Sync). 394 tests, 82% line coverage.
+              report history, and a React 19 PWA with offline mode (IndexedDB + Background Sync): the technician files
+              the report in the field with no signal through a 13-step guided form with on-screen signature and a PDF
+              at the end. Load-tested before promising anything: 200 concurrent users (k6) with zero server errors,
+              p95 276 ms. 394 tests, 82% line coverage.
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">RAG</span><span class="tag">Node.js</span>
               <span class="tag">PostgreSQL</span><span class="tag">React 19</span><span class="tag">PWA</span>
-              <span class="tag">SSE</span><span class="tag">JWT</span>
+              <span class="tag">SSE</span><span class="tag">JWT</span><span class="tag">k6</span>
             </div>
             <div class="project-links">
               <a href="https://hidrobombas-merida.vercel.app/login" target="_blank" rel="noopener" class="btn-live"><i class="uil uil-external-link-alt"></i> Live Demo</a>
@@ -504,7 +595,8 @@
               (so the search can be widened instead of hitting zero results), autocomplete and "did you mean".
               Hexagonal architecture with fail-open Redis caching. 500+ tests (97% coverage), a k6 load test of
               398,000 requests with 0 failures, and automated security in CI over code, dependencies, git history,
-              image and running API.
+              image and running API (OWASP ZAP: 128 URLs, 0 findings). Index schema changes go live with zero downtime
+              by moving an alias atomically.
             </p>
             <div class="project-tags">
               <span class="tag">NestJS</span><span class="tag">TypeScript</span><span class="tag">Elasticsearch</span>
@@ -518,6 +610,41 @@
           </div>
         </div>
 
+        <!-- VOICE CALL AGENT -->
+        <div class="project-card reveal">
+          <div class="project-image is-generated">
+            <i class="uil uil-phone-volume"></i>
+            <span>Voice AI</span>
+            <div class="project-image-overlay">
+              <a href="https://github.com/ROMEROLUIS15/voice-call-agent" target="_blank" rel="noopener" class="project-link-btn outline">
+                <i class="fa-brands fa-github"></i> GitHub
+              </a>
+            </div>
+          </div>
+          <div class="project-body">
+            <div class="project-top">
+              <span class="project-name">Voice Call Agent</span>
+              <span class="project-status status-wip">● Phone line pending</span>
+            </div>
+            <p class="project-desc">
+              Real-time Spanish voice agent that answers a business's phone and books appointments: STT → LLM → TTS
+              on Pipecat 1.14 + Pipecat Flows, with two entry points — phone (Twilio) and WhatsApp (WebRTC) — and
+              bookings written into Cronix through a signed API. The design rule: the model understands and phrases;
+              the code owns the facts and every write, and a booking happens only after the caller confirms the
+              read-back. 1.00 on every measure of the golden dataset (29 cases × 3 reps), first token in 391 ms (p50),
+              ~0.06 USD per ~2-minute call. Working against Cronix today; the phone line is waiting for a Venezuelan number.
+            </p>
+            <div class="project-tags">
+              <span class="tag">Python 3.12</span><span class="tag">FastAPI</span><span class="tag">Pipecat Flows</span>
+              <span class="tag">Deepgram Flux / Aura-2</span><span class="tag">DeepSeek</span><span class="tag">OpenRouter</span>
+              <span class="tag">Twilio</span><span class="tag">WebRTC</span><span class="tag">Sentry</span>
+            </div>
+            <div class="project-links">
+              <a href="https://github.com/ROMEROLUIS15/voice-call-agent" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
+            </div>
+          </div>
+        </div>
+
         </div><!-- /projects-row -->
 
       </div>
@@ -527,7 +654,7 @@
     <section class="section" id="challenges">
       <div class="top-header reveal">
         <p class="section-label">Technical Challenges</p>
-        <h2 class="section-title">Take-home exercises</h2>
+        <h2 class="section-title">Take-home exercises &amp; hackathons</h2>
         <p class="section-subtitle">Timed challenges, built to the same standard as the production work</p>
       </div>
       <div class="challenges-grid">
@@ -571,6 +698,26 @@
           </div>
           <div class="project-links">
             <a href="https://github.com/ROMEROLUIS15/AHVA-TechChallenge" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> View on GitHub</a>
+          </div>
+        </div>
+
+        <div class="challenge-card reveal">
+          <div class="challenge-top">
+            <i class="uil uil-box"></i>
+            <span class="challenge-name">Frontier BOG26 — "La caja negra"</span>
+          </div>
+          <p class="challenge-desc">
+            Hackathon, challenge 2: reverse-engineer an unknown HTTP service through experiments and deploy a replica
+            that answers exactly the same, errors included. 84 logged experiments replayed as equivalence tests, and a
+            differential fuzzing campaign that uncovered a hidden business rule. Built test-first in TypeScript and
+            deployed on Railway.
+          </p>
+          <div class="project-tags">
+            <span class="tag">TypeScript</span><span class="tag">Reverse engineering</span><span class="tag">Differential fuzzing</span>
+            <span class="tag">Equivalence tests</span><span class="tag">Railway</span>
+          </div>
+          <div class="project-links">
+            <a href="https://github.com/ROMEROLUIS15/frontier-blackbox-engine" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> View on GitHub</a>
           </div>
         </div>
 
@@ -790,6 +937,8 @@
         <li>Custom AI orchestration engine — no LangChain, no framework — giving full control over every step of the flow.</li>
         <li>Multi-tenant SaaS: each business gets isolated data (PostgreSQL RLS), its own agent config and its own metrics dashboard.</li>
         <li>Automated reminders via pg_cron — zero manual intervention required once onboarded.</li>
+        <li>A Next.js 15 dashboard for the business owner (App Router, Server Actions, SSR), installable as an app, with a real-time calendar, financial summary, PDF reports and 6 languages.</li>
+        <li>A real-time voice call agent (Python, Pipecat Flows, Deepgram, WebRTC/Twilio) that books appointments by voice: the model talks, code decides every fact and every write, including the caller's confirmation.</li>
       </ul>
     </div>
 
@@ -849,7 +998,9 @@
         <li><strong>No framework for orchestration</strong> — full control over tool execution order, retries and fallback logic without black-box behavior.</li>
         <li><strong>PostgreSQL RLS over application-level isolation</strong> — 59 policies across 32 tables, validated with 147 pgTAP assertions. Data leaks between tenants are impossible at the DB level.</li>
         <li><strong>WebAuthn/Passkeys over passwords</strong> — phishing-resistant auth with no shared secrets to leak.</li>
-        <li><strong>QStash for async payment fulfillment</strong> — idempotent processing with guaranteed at-least-once delivery, no payment lost on server crash.</li>
+        <li><strong>Auditing my own security</strong> — found that 13 database functions let one business read another's data, reproduced the attack to confirm it, closed it with an ownership check and locked it down with the pgTAP security suite.</li>
+        <li><strong>Signed API for the call agent</strong> — HMAC-signed requests with idempotency and a lock that prevents booking the same slot twice. Model chosen by measurement: 1.00 on the golden dataset, first token in 391 ms (p50), every call traced in Sentry with latency and cost.</li>
+        <li><strong>QStash for async payment fulfillment</strong> — idempotent processing with guaranteed at-least-once delivery, no payment lost on server crash. Across 4 payment methods, even if the provider notifies the same payment twice, the business is billed once.</li>
         <li><strong>Deno Edge Functions</strong> — global low-latency for the AI agent with no cold start on Supabase infra.</li>
       </ul>
     </div>
@@ -865,6 +1016,11 @@
         <span class="cs-pill hi">PostgreSQL RLS</span>
         <span class="cs-pill hi">Groq</span>
         <span class="cs-pill hi">Deepgram</span>
+        <span class="cs-pill hi">Next.js 15</span>
+        <span class="cs-pill hi">Python</span>
+        <span class="cs-pill">Pipecat Flows</span>
+        <span class="cs-pill">WebRTC</span>
+        <span class="cs-pill">Twilio</span>
         <span class="cs-pill">DeepEval</span>
         <span class="cs-pill">LangSmith</span>
         <span class="cs-pill">Redis / Upstash</span>
@@ -873,6 +1029,7 @@
         <span class="cs-pill">PayPal</span>
         <span class="cs-pill">NOWPayments</span>
         <span class="cs-pill">Binance Pay</span>
+        <span class="cs-pill">Pago Móvil</span>
         <span class="cs-pill">pg_cron</span>
         <span class="cs-pill">pgTAP</span>
         <span class="cs-pill">Vitest</span>
@@ -899,14 +1056,15 @@
 <!-- CV overlay + modal (at body level so it covers everything) -->
 <div class="cv-overlay" id="cvOverlay"></div>
 <div class="cv-dropdown-menu" id="cvModal">
-  <div class="cv-modal-title">Select language</div>
-  <!-- Temporary: both options serve the English CV until the Spanish version is
-       updated and uploaded. Point the second link back at the ES file then. -->
-  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_E.pdf" download="LuisRomero_AIEngineer-Backend_2026_EN.pdf">
-    <i class="uil uil-file-alt"></i> English (EN)
+  <div class="cv-modal-title">Select a profile</div>
+  <a href="assets/cv/LuisRomero_AIEngineer-FullStack_2026_EN.pdf" download="LuisRomero_AIEngineer-FullStack_2026_EN.pdf">
+    <i class="uil uil-file-alt"></i> Full Stack
   </a>
-  <a href="assets/images/LuisRomero_AIEngineer-Backend_2026_E.pdf" download="LuisRomero_AIEngineer-Backend_2026_EN.pdf">
-    <i class="uil uil-file-alt"></i> Spanish (ES)
+  <a href="assets/cv/LuisRomero_AIEngineer_2026_EN.pdf" download="LuisRomero_AIEngineer_2026_EN.pdf">
+    <i class="uil uil-file-alt"></i> AI Engineer
+  </a>
+  <a href="assets/cv/LuisRomero_Backend-AIEngineer_2026_EN.pdf" download="LuisRomero_Backend-AIEngineer_2026_EN.pdf">
+    <i class="uil uil-file-alt"></i> Backend
   </a>
 </div>
 
