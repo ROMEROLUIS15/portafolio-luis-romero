@@ -20,3 +20,7 @@ supabase/.temp/** linguist-vendored=true
 
 # Markdown docs — excluded from language stats (standard practice)
 *.md linguist-documentation=true
+
+# PDFs are binary even when they carry no NUL byte (ReportLab output),
+# so line-ending conversion must never touch them.
+*.pdf binary
