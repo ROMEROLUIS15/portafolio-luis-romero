@@ -323,8 +323,10 @@ const GROUNDING: GroundingCase[] = [
     name:         'Cronix test count is current',
     ask:          'Cuantos tests tiene Cronix?',
     lang:         'es',
-    mustMatch:    /1[.,]?600/,
-    mustNotMatch: /\b1[.,]?000\b/,
+    // Any thousands separator: es-ES answers have come back as "1 600" with a
+    // narrow no-break space (U+202F), which \s covers in JS regexes.
+    mustMatch:    /1[.,\s]?600/,
+    mustNotMatch: /\b1[.,\s]?000\b/,
   },
   {
     name:       'knows the IBIME promotion',
