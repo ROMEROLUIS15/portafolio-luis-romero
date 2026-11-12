@@ -133,12 +133,23 @@
           <p>
             Soy <span class="highlight">Backend Developer y AI Engineer</span> con base en Mérida, Venezuela.
             Empecé como autodidacta en freeCodeCamp y documentación oficial, luego profundicé mis habilidades
-            en el Bootcamp Full-Stack de Academlo — donde descubrí una pasión fuerte por la arquitectura backend.
+            en el Bootcamp Full-Stack de Academlo — donde descubrí una pasión fuerte por la arquitectura backend —
+            y en octubre de 2026 me gradué de <span class="highlight">Ingeniería en Sistemas Informáticos</span>.
           </p>
           <p>
             Hoy construyo backend en <span class="highlight">Complexity</span>, una empresa de software en Texas,
-            donde audité el backend del producto, me aprobaron el plan de remediación y lo ejecuto de punta a
-            punta — mientras defino cómo entrega el equipo: spec-driven development con trazabilidad de ticket a PR.
+            donde audité el backend del producto, me aprobaron el plan de remediación y lo dirigí hasta cerrarlo
+            sin frenar el roadmap — y diseñé el harness de agentes de IA y el pipeline de calidad por los que pasa
+            el trabajo: spec-driven development, evidencia detrás de cada afirmación y cada PR validado por completo en ~6 minutos.
+          </p>
+          <p>
+            Trabajo con agentes, y los dirijo yo: llevo mis proyectos en <span class="highlight">Herdr</span>,
+            un entorno de desarrollo agéntico que personalicé al estilo Orca — un worktree de git por tarea y
+            agentes por rol (orquestador, implementador, validador) que se comunican entre proyectos con
+            <span class="highlight">hagent</span>, una CLI que escribí. Cada cambio parte de una spec versionada,
+            pasa por los quality gates del harness y recibe una validación independiente antes de llegar a un pull
+            request, con <span class="highlight">Gentle AI</span> como capa de workflow y
+            <span class="highlight">Engram</span> como memoria persistente entre sesiones.
           </p>
           <p>
             En paralelo construyo y opero sistemas de IA con usuarios reales todos los días. Fundé
@@ -170,12 +181,36 @@
               <span class="pill">LangChain</span>
               <span class="pill">DeepEval</span>
               <span class="pill">LangSmith</span>
+              <span class="pill">Langfuse</span>
+              <span class="pill">Structured Outputs</span>
+              <span class="pill">Vercel AI SDK</span>
               <span class="pill">MCP</span>
               <span class="pill">Voice AI</span>
+              <span class="pill">Pipecat / Pipecat Flows</span>
+              <span class="pill">WebRTC</span>
+              <span class="pill">STT / TTS</span>
+              <span class="pill">OpenRouter</span>
               <span class="pill">Groq</span>
               <span class="pill">DeepSeek</span>
               <span class="pill">Gemini</span>
               <span class="pill">Deepgram</span>
+            </div>
+          </div>
+          <div class="skills-category">
+            <div class="skills-category-title">Harness Engineering</div>
+            <div class="skills-pills">
+              <span class="pill featured">Claude Code</span>
+              <span class="pill featured">Codex</span>
+              <span class="pill featured">Herdr</span>
+              <span class="pill">Orca</span>
+              <span class="pill">Gentle AI</span>
+              <span class="pill">Engram</span>
+              <span class="pill">MCP</span>
+              <span class="pill">Spec-Driven Development</span>
+              <span class="pill">Orquestación multi-agente</span>
+              <span class="pill">Subagentes</span>
+              <span class="pill">Hooks y skills de agentes</span>
+              <span class="pill">Context Engineering</span>
             </div>
           </div>
           <div class="skills-category">
@@ -204,6 +239,7 @@
               <span class="pill">Neon</span>
               <span class="pill">REST / OpenAPI</span>
               <span class="pill">Colas (BullMQ, QStash)</span>
+              <span class="pill">Resend</span>
               <span class="pill">Arquitectura Hexagonal</span>
               <span class="pill">Row-Level Security</span>
               <span class="pill">Multi-tenant</span>
@@ -214,6 +250,11 @@
             <div class="skills-pills">
               <span class="pill featured">CI/CD</span>
               <span class="pill featured">Spec-Driven Development</span>
+              <span class="pill featured">AWS</span>
+              <span class="pill">EC2 / S3 / ECR</span>
+              <span class="pill">CloudWatch</span>
+              <span class="pill">Secrets Manager</span>
+              <span class="pill">RDS</span>
               <span class="pill">Docker</span>
               <span class="pill">Sentry</span>
               <span class="pill">OpenTelemetry</span>
@@ -254,15 +295,19 @@
               <span class="timeline-date">Jul 2026 – Presente</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Backend de una aplicación móvil: API REST versionada con OpenAPI, tiempo real por WebSockets, colas de trabajos en segundo plano y búsqueda full-text, sobre un monolito modular de 26 módulos de dominio (NestJS, PostgreSQL/TypeORM, Redis, Elasticsearch).</li>
-              <li>Entré al equipo tras pasar su reto técnico — un motor de búsqueda y descubrimiento para un problema real del producto, entregado desplegado, documentado con OpenAPI y con escaneo de seguridad en CI.</li>
-              <li>Audité el backend, presenté los hallazgos al equipo y me aprobaron el plan de remediación; lo estoy ejecutando de punta a punta. Primero los riesgos de exposición: saqué datos sensibles de las respuestas y los logs, moví credenciales incrustadas en el código a configuración validada al arranque, cerré el acceso a la documentación en producción y reparé siete suites de tests que ya no compilaban.</li>
-              <li>Definí cómo trabaja el equipo: spec-driven development con trazabilidad de ticket a PR, convenciones de ramas y commits, plantilla de PR con presupuesto de revisión que cuenta por separado el código escrito a mano y el generado, y un workflow de CI que verifica la política de ramas y la revisión independiente — un plan desglosado en ~150 cambios acotados.</li>
+              <li>Proyecto Factory: backend de una plataforma B2B de directorio de empresas y de su panel de administración, con app móvil — API REST, tiempo real por WebSockets, colas de trabajo, búsqueda full-text y agentes de IA (NestJS, PostgreSQL, Redis/BullMQ, Elasticsearch, AWS).</li>
+              <li>Audité el backend al llegar, presenté los hallazgos y me aprobaron el plan de remediación, que dirigí hasta cerrarlo sin frenar el roadmap: eliminé el acoplamiento indebido entre módulos, bajé las dependencias circulares de 31 a 0 y llevé la lógica de negocio a 330 casos de uso sobre arquitectura hexagonal.</li>
+              <li>Diseñé el harness de agentes de IA con el que trabajo — reglas numeradas que el propio código cita, gates de arquitectura y calidad, y un control que pide evidencia de cada afirmación del agente (Orca, Gentle AI, MCP, Spec-Driven Development). Con él planifiqué el trabajo en 700+ tickets y entregué 1.050+ pull requests integrados y 20+ releases a producción en tres meses, revisando y aprobando cada cambio.</li>
+              <li>Construí desde cero el pipeline de calidad y seguridad: al llegar, ningún pull request ejecutaba pruebas. Hoy cada cambio pasa por tipado estricto, pruebas unitarias, de integración y end-to-end, escaneo de seguridad (SAST/SCA, secretos) y reglas de arquitectura, y un PR completo se valida en ~6 min. Las pruebas unitarias pasaron de 20 a 1.000+ suites.</li>
+              <li>Lideré de punta a punta el backend de "Reclama tu empresa" — el programa de salida al mercado (GTM), hoy en producción — alimentado por una carga asistida por IA en la que un agente arma perfiles de empresa y borradores de producto que nadie publica sin aprobación humana.</li>
+              <li>Diseñé un motor de extracción con IA en el que cada dato lleva la cita de su fuente, dos modelos deben coincidir y el código, no el modelo, decide qué se guarda; la calidad se mide con evals contra la decisión del revisor humano y trazas en Langfuse. Casi triplicó la precisión al clasificar categorías.</li>
+              <li>Llevé la seguridad a nivel de fila (RLS) de PostgreSQL a producción: de 0 a 63 tablas aplicadas en tres olas reversibles, con pruebas pgTAP que bloquean el merge. Resolví en menos de 4 h un reporte urgente de exposición de datos personales y operé despliegues en AWS (EC2, CloudWatch, Secrets Manager).</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">NestJS</span><span class="tag">TypeScript</span><span class="tag">PostgreSQL</span>
-              <span class="tag">TypeORM</span><span class="tag">Elasticsearch</span><span class="tag">Redis</span>
-              <span class="tag">WebSockets</span><span class="tag">OpenAPI</span><span class="tag">Auditoría de seguridad</span>
+              <span class="tag">Redis / BullMQ</span><span class="tag">Elasticsearch</span><span class="tag">AWS</span>
+              <span class="tag">WebSockets</span><span class="tag">Langfuse</span><span class="tag">pgTAP</span>
+              <span class="tag">Arquitectura Hexagonal</span><span class="tag">Auditoría de seguridad</span>
             </div>
           </div>
         </div>
@@ -275,21 +320,25 @@
           <div class="timeline-content">
             <div class="timeline-header">
               <div>
-                <div class="timeline-role">Software Development Lead <span class="role-prev">· Backend / Full-Stack Developer</span></div>
-                <div class="timeline-company">IBIME Connect — Plataforma institucional</div>
+                <div class="timeline-role">Coordinador de Desarrollo de Software <span class="role-prev">(Feb 2026 – Jul 2026) · Backend / Full-Stack Developer (Ene 2025 – Feb 2026)</span></div>
+                <div class="timeline-company">IBIME Connect — Plataforma institucional (Remoto)</div>
               </div>
+              <span class="timeline-date">Ene 2025 – Jul 2026</span>
             </div>
             <ul class="timeline-bullets">
-              <li>Construí el asistente de IA con el que una red pública de bibliotecas responde las consultas de la ciudadanía, dentro de la nueva plataforma que sustituirá su sitio anterior. La institución la adoptó como plataforma oficial y, a raíz de esa entrega, me nombró Software Development Lead.</li>
+              <li>Reemplacé el sistema antiguo (HTML/CSS) de una red pública de bibliotecas por una plataforma digital completa, con un asistente de IA que atiende las consultas de los ciudadanos. La institución la aprobó, la adoptó como su plataforma oficial y, a raíz de esa entrega, me designó Coordinador de Desarrollo de Software.</li>
+              <li>Dirigí el desarrollo de software de la institución: decidí el stack y la arquitectura, fijé los estándares de pruebas y calidad, y prioricé el roadmap junto a bibliotecarios y el área de informática.</li>
+              <li>Construí el frontend en React sobre arquitectura hexagonal, con las validaciones de datos compartidas entre frontend y backend (Zod) para que el contrato no se rompa en silencio.</li>
               <li>Evité que el asistente inventara respuestas manteniendo el modelo fuera del flujo de decisión: un clasificador de intención por reglas (sin LLM) enruta la conversación, y cuando el correo del ciudadano ya se conoce la respuesta sale directo de la base de datos — menos costo, menos latencia y ninguna oportunidad de alucinar.</li>
               <li>Implementé RAG y búsqueda semántica sobre los documentos de la institución: PostgreSQL + pgvector con embeddings Gemini de 768 dimensiones, inferencia en Groq configurable por entorno, caché de embeddings en Redis y un umbral de coincidencia que prefiere no responder antes que responder mal.</li>
               <li>Construí un agente LangGraph con estado (extractor, validador y corrector, con reintentos acotados) que convierte los PDFs de catálogo en datos estructurados y validados, descartando duplicados por contenido.</li>
-              <li>Endurecí la plataforma para el manejo de datos personales: bloqueé escrituras anónimas en tablas sensibles (RLS), evité registros duplicados y redacté una propuesta de política de retención y borrado. API en capas con inyección de dependencias, módulo del asistente con arquitectura hexagonal y logs estructurados con ID de petición; 670+ tests en CI.</li>
+              <li>Endurecí la plataforma para el manejo de datos personales: bloqueé escrituras anónimas en tablas sensibles (RLS), evité registros duplicados y redacté una propuesta de política de retención y borrado. API en capas con inyección de dependencias, módulo del asistente con arquitectura hexagonal y logs estructurados con ID de petición; 700+ tests en CI (Vitest + Playwright).</li>
             </ul>
             <div class="timeline-tags">
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">LangGraph</span>
               <span class="tag">RAG</span><span class="tag">pgvector</span><span class="tag">Redis</span>
               <span class="tag">PostgreSQL</span><span class="tag">React</span><span class="tag">Express</span>
+              <span class="tag">Zod</span>
             </div>
           </div>
         </div>
@@ -316,6 +365,47 @@
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">Socket.IO</span>
               <span class="tag">MercadoPago</span><span class="tag">Agora RTC</span><span class="tag">MySQL</span>
               <span class="tag">JWT</span><span class="tag">OAuth 2.0</span><span class="tag">AWS RDS</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Educación -->
+      <div class="top-header reveal" style="margin-top:56px">
+        <p class="section-label">Educación</p>
+        <h2 class="section-title">Dónde estudié</h2>
+      </div>
+      <div class="timeline">
+
+        <div class="timeline-item reveal">
+          <div class="timeline-dot-col">
+            <div class="timeline-dot"></div>
+            <div class="line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <div class="timeline-role">Ingeniería en Sistemas Informáticos</div>
+                <div class="timeline-company">UPTM Kléber Ramírez</div>
+              </div>
+              <span class="timeline-date">Graduado Oct 2026</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="timeline-item reveal">
+          <div class="timeline-dot-col">
+            <div class="timeline-dot"></div>
+            <div class="line"></div>
+          </div>
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <div>
+                <div class="timeline-role">Bootcamp Full-Stack</div>
+                <div class="timeline-company">Academlo</div>
+              </div>
+              <span class="timeline-date">Mar 2024</span>
             </div>
           </div>
         </div>
@@ -350,8 +440,14 @@
               24/7 en producción con 250+ citas reales gestionadas y recordatorios automáticos por pg_cron, sin intervención manual.
               Motor de orquestación de IA propio (sin framework) para WhatsApp y voz con 12 capacidades, arquitectura anti-alucinación
               de 6 capas, suite de evaluación LLM-as-judge, tracing multi-tenant y 1.600+ tests.
+              El dueño del negocio lo opera desde un panel en Next.js 15 instalable como app, con calendario en tiempo real,
+              resumen financiero, reportes en PDF y 6 idiomas. Un agente de llamadas en tiempo real (Python, Pipecat Flows,
+              Deepgram, WebRTC/Twilio) agenda en Cronix a través de una API firmada (HMAC) con idempotencia y bloqueo de
+              horario — primer token en 391 ms (p50), 1,00 en el dataset golden. Audité mi propia seguridad, encontré un
+              agujero entre negocios en 13 funciones de la base de datos y lo cerré; 4 métodos de pago a prueba de cobros duplicados.
             </p>
             <div class="project-tags">
+              <span class="tag">Next.js 15</span><span class="tag">Python</span><span class="tag">Pipecat Flows</span>
               <span class="tag">Node.js</span><span class="tag">TypeScript</span><span class="tag">Deno</span>
               <span class="tag">Supabase</span><span class="tag">PostgreSQL RLS</span><span class="tag">Groq</span>
               <span class="tag">Deepgram</span><span class="tag">DeepEval</span><span class="tag">LangSmith</span>
@@ -386,8 +482,12 @@
               inventario, cotizaciones, venta de motos y CRM, aislados por taller. Un microservicio Python
               (FastAPI + LangGraph) corre dos agentes — uno atiende a los clientes por WhatsApp y otro asiste
               al back office con memoria de sesión, reportes periódicos y alertas de stock bajo — y llega a la
-              API NestJS con credenciales que expiran en 5 minutos y campos sensibles cifrados.
-              400+ tests (Jest, pytest, Playwright).
+              API NestJS con credenciales que expiran en 5 minutos y campos sensibles cifrados. Cotizaciones
+              versionadas con aprobación del cliente y PDF, venta de motocicletas con plan de pago y contrato en PDF;
+              NestJS con arquitectura hexagonal (37 modelos en Prisma) y frontend en Next.js 15.5 / React 19 instalable
+              como app. Encontré y cerré una escalada de privilegios en producción — un rol de solo lectura podía cambiar
+              la configuración del taller — corregida con permisos por rol y blindada con un test.
+              400+ tests (Jest, Vitest, pytest, Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">Python</span><span class="tag">FastAPI</span><span class="tag">LangGraph</span>
@@ -418,7 +518,8 @@
             <p class="project-desc">
               Plataforma digital institucional para una red pública de bibliotecas con asistente conversacional de IA.
               Motor de chat anti-alucinación de 5 capas, búsqueda semántica en pgvector, caché Redis, y agente LangGraph
-              con estado que parsea PDFs de catálogo en JSON validado. 670+ tests (Vitest + Playwright).
+              con estado que parsea PDFs de catálogo en JSON validado, y frontend en React sobre arquitectura hexagonal
+              con validaciones Zod compartidas con el backend. 700+ tests (Vitest + Playwright).
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">pgvector</span><span class="tag">Gemini</span>
@@ -448,12 +549,15 @@
             <p class="project-desc">
               CMMS de punta a punta (52 endpoints REST / 11 modelos de datos) que reemplazó la hoja de inspección en papel
               de una empresa de mantenimiento industrial. Asistente de IA con orquestación multi-agente (LangGraph), RAG sobre
-              historial de reportes, y PWA React 19 con modo offline (IndexedDB + Background Sync). 394 tests, 82% cobertura.
+              historial de reportes, y PWA React 19 con modo offline (IndexedDB + Background Sync): el técnico levanta el
+              reporte en campo aunque no tenga señal, con un formulario guiado de 13 pasos, firma en pantalla y PDF al final.
+              Medí su techo antes de prometer nada: 200 usuarios simultáneos (k6) sin un solo error de servidor, p95 276 ms.
+              394 tests, 82% cobertura.
             </p>
             <div class="project-tags">
               <span class="tag">LangGraph</span><span class="tag">RAG</span><span class="tag">Node.js</span>
               <span class="tag">PostgreSQL</span><span class="tag">React 19</span><span class="tag">PWA</span>
-              <span class="tag">SSE</span><span class="tag">JWT</span>
+              <span class="tag">SSE</span><span class="tag">JWT</span><span class="tag">k6</span>
             </div>
             <div class="project-links">
               <a href="https://hidrobombas-merida.vercel.app/login" target="_blank" rel="noopener" class="btn-live"><i class="uil uil-external-link-alt"></i> Demo en vivo</a>
@@ -483,7 +587,9 @@
               ajustada por popularidad y recencia, conteos de facetas calculados excluyendo su propio filtro
               (para poder ampliar la búsqueda en vez de quedarse en cero resultados), autocompletado y sugerencias
               "quizás quisiste decir". Arquitectura hexagonal con caché Redis fail-open. 500+ tests (97% cobertura),
-              prueba de carga k6 de 398.000 peticiones con 0 fallos y seguridad automatizada en CI.
+              prueba de carga k6 de 398.000 peticiones con 0 fallos y seguridad automatizada en CI sobre el código,
+              las dependencias, el historial de git, la imagen y la API en ejecución (OWASP ZAP: 128 URLs, 0 hallazgos).
+              Los cambios de estructura del índice salen sin sacar la API de servicio, moviendo un alias de forma atómica.
             </p>
             <div class="project-tags">
               <span class="tag">NestJS</span><span class="tag">TypeScript</span><span class="tag">Elasticsearch</span>
@@ -497,6 +603,39 @@
           </div>
         </div>
 
+        <!-- VOICE CALL AGENT -->
+        <div class="project-card reveal">
+          <div class="project-image is-generated">
+            <i class="uil uil-phone-volume"></i>
+            <span>Voice AI</span>
+            <div class="project-image-overlay">
+              <a href="https://github.com/ROMEROLUIS15/voice-call-agent" target="_blank" rel="noopener" class="project-link-btn outline"><i class="fa-brands fa-github"></i> GitHub</a>
+            </div>
+          </div>
+          <div class="project-body">
+            <div class="project-top">
+              <span class="project-name">Voice Call Agent</span>
+              <span class="project-status status-wip">● Línea telefónica pendiente</span>
+            </div>
+            <p class="project-desc">
+              Agente de voz en español y en tiempo real que atiende el teléfono de un negocio y agenda citas: STT → LLM → TTS
+              sobre Pipecat 1.14 + Pipecat Flows, con dos entradas — teléfono (Twilio) y WhatsApp (WebRTC) — y las reservas
+              escritas en Cronix a través de una API firmada. La regla de diseño: el modelo entiende y redacta; el código es
+              dueño de los datos y de cada escritura, y la reserva solo ocurre después de que quien llama confirma la
+              lectura de vuelta. 1,00 en todas las métricas del dataset golden (29 casos × 3 repeticiones), primer token en
+              391 ms (p50), ~0,06 USD por llamada de ~2 minutos. Hoy funciona contra Cronix; la línea telefónica espera un número venezolano.
+            </p>
+            <div class="project-tags">
+              <span class="tag">Python 3.12</span><span class="tag">FastAPI</span><span class="tag">Pipecat Flows</span>
+              <span class="tag">Deepgram Flux / Aura-2</span><span class="tag">DeepSeek</span><span class="tag">OpenRouter</span>
+              <span class="tag">Twilio</span><span class="tag">WebRTC</span><span class="tag">Sentry</span>
+            </div>
+            <div class="project-links">
+              <a href="https://github.com/ROMEROLUIS15/voice-call-agent" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> GitHub</a>
+            </div>
+          </div>
+        </div>
+
         </div><!-- /projects-row -->
 
       </div>
@@ -506,7 +645,7 @@
     <section class="section" id="challenges">
       <div class="top-header reveal">
         <p class="section-label">Retos Técnicos</p>
-        <h2 class="section-title">Pruebas técnicas</h2>
+        <h2 class="section-title">Pruebas técnicas y hackatones</h2>
         <p class="section-subtitle">Retos con tiempo limitado, construidos con el mismo estándar que el trabajo en producción</p>
       </div>
       <div class="challenges-grid">
@@ -552,6 +691,26 @@
           </div>
           <div class="project-links">
             <a href="https://github.com/ROMEROLUIS15/AHVA-TechChallenge" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> Ver en GitHub</a>
+          </div>
+        </div>
+
+        <div class="challenge-card reveal">
+          <div class="challenge-top">
+            <i class="uil uil-box"></i>
+            <span class="challenge-name">Frontier BOG26 — "La caja negra"</span>
+          </div>
+          <p class="challenge-desc">
+            Hackatón, reto 2: hacer ingeniería inversa de un servicio HTTP desconocido a base de experimentos y desplegar
+            una réplica que responda exactamente igual, errores incluidos. 84 experimentos registrados que se reproducen
+            como pruebas de equivalencia, y una campaña de fuzzing diferencial que destapó una regla de negocio oculta.
+            Construido test-first en TypeScript y desplegado en Railway.
+          </p>
+          <div class="project-tags">
+            <span class="tag">TypeScript</span><span class="tag">Ingeniería inversa</span><span class="tag">Fuzzing diferencial</span>
+            <span class="tag">Pruebas de equivalencia</span><span class="tag">Railway</span>
+          </div>
+          <div class="project-links">
+            <a href="https://github.com/ROMEROLUIS15/frontier-blackbox-engine" target="_blank" rel="noopener"><i class="fa-brands fa-github"></i> Ver en GitHub</a>
           </div>
         </div>
 
@@ -771,6 +930,8 @@
         <li>Motor de orquestación propio — sin LangChain, sin framework — control total sobre cada paso del flujo.</li>
         <li>SaaS multi-tenant: cada negocio tiene datos aislados (PostgreSQL RLS), config de agente propia y dashboard de métricas propio.</li>
         <li>Recordatorios automáticos vía pg_cron — cero intervención manual una vez onboardeado.</li>
+        <li>Panel en Next.js 15 para el dueño del negocio (App Router, Server Actions, SSR), instalable como app, con calendario en tiempo real, resumen financiero, reportes en PDF y 6 idiomas.</li>
+        <li>Agente de llamadas en tiempo real (Python, Pipecat Flows, Deepgram, WebRTC/Twilio) que agenda citas hablando: el modelo conversa y el código decide cada dato y cada escritura, incluida la confirmación del cliente.</li>
       </ul>
     </div>
 
@@ -830,7 +991,9 @@
         <li><strong>Sin framework de orquestación</strong> — control total sobre el orden de ejecución de tools, reintentos y lógica de fallback sin comportamiento caja negra.</li>
         <li><strong>PostgreSQL RLS en vez de aislamiento a nivel aplicación</strong> — 59 políticas en 32 tablas, validadas con 147 asserts pgTAP. Fuga de datos entre tenants imposible a nivel BD.</li>
         <li><strong>WebAuthn/Passkeys en vez de contraseñas</strong> — auth resistente a phishing sin secretos compartidos que puedan filtrarse.</li>
-        <li><strong>QStash para fulfillment asíncrono de pagos</strong> — procesamiento idempotente con entrega garantizada at-least-once, ningún pago se pierde en caída del servidor.</li>
+        <li><strong>Auditar mi propia seguridad</strong> — descubrí que 13 funciones de la base de datos permitían ver datos de otros negocios, reproduje el ataque para confirmarlo, lo cerré con una validación de pertenencia y lo dejé cubierto por la suite de seguridad pgTAP.</li>
+        <li><strong>API firmada para el agente de llamadas</strong> — peticiones firmadas con HMAC, idempotencia y un bloqueo que impide reservar dos veces el mismo horario. Modelo elegido midiendo: 1,00 en el dataset golden, primer token en 391 ms (p50), cada llamada trazada en Sentry con latencia y costo.</li>
+        <li><strong>QStash para fulfillment asíncrono de pagos</strong> — procesamiento idempotente con entrega garantizada at-least-once, ningún pago se pierde en caída del servidor. En los 4 métodos de pago, aunque el proveedor notifique dos veces el mismo pago, al negocio se le cobra una sola vez.</li>
         <li><strong>Deno Edge Functions</strong> — baja latencia global para el agente de IA sin cold start en infraestructura Supabase.</li>
       </ul>
     </div>
@@ -846,6 +1009,11 @@
         <span class="cs-pill hi">PostgreSQL RLS</span>
         <span class="cs-pill hi">Groq</span>
         <span class="cs-pill hi">Deepgram</span>
+        <span class="cs-pill hi">Next.js 15</span>
+        <span class="cs-pill hi">Python</span>
+        <span class="cs-pill">Pipecat Flows</span>
+        <span class="cs-pill">WebRTC</span>
+        <span class="cs-pill">Twilio</span>
         <span class="cs-pill">DeepEval</span>
         <span class="cs-pill">LangSmith</span>
         <span class="cs-pill">Redis / Upstash</span>
@@ -854,6 +1022,7 @@
         <span class="cs-pill">PayPal</span>
         <span class="cs-pill">NOWPayments</span>
         <span class="cs-pill">Binance Pay</span>
+        <span class="cs-pill">Pago Móvil</span>
         <span class="cs-pill">pg_cron</span>
         <span class="cs-pill">pgTAP</span>
         <span class="cs-pill">Vitest</span>
@@ -880,14 +1049,15 @@
 <!-- CV overlay + modal (at body level so it covers everything) -->
 <div class="cv-overlay" id="cvOverlay"></div>
 <div class="cv-dropdown-menu" id="cvModal">
-  <div class="cv-modal-title">Selecciona idioma</div>
-  <!-- Temporal: ambas opciones entregan el CV en inglés hasta que se actualice y
-       suba la versión en español. Entonces, devolver el primer enlace al ES. -->
-  <a href="../assets/images/LuisRomero_AIEngineer-Backend_2026_E.pdf" download="LuisRomero_AIEngineer-Backend_2026_EN.pdf">
-    <i class="uil uil-file-alt"></i> Español (ES)
+  <div class="cv-modal-title">Elige un perfil</div>
+  <a href="../assets/cv/LuisRomero_AIEngineer-FullStack_2026_ES.pdf" download="LuisRomero_AIEngineer-FullStack_2026_ES.pdf">
+    <i class="uil uil-file-alt"></i> Full Stack
   </a>
-  <a href="../assets/images/LuisRomero_AIEngineer-Backend_2026_E.pdf" download="LuisRomero_AIEngineer-Backend_2026_EN.pdf">
-    <i class="uil uil-file-alt"></i> Inglés (EN)
+  <a href="../assets/cv/LuisRomero_AIEngineer_2026_ES.pdf" download="LuisRomero_AIEngineer_2026_ES.pdf">
+    <i class="uil uil-file-alt"></i> AI Engineer
+  </a>
+  <a href="../assets/cv/LuisRomero_Backend-AIEngineer_2026_ES.pdf" download="LuisRomero_Backend-AIEngineer_2026_ES.pdf">
+    <i class="uil uil-file-alt"></i> Backend
   </a>
 </div>
 
