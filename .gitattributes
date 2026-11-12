@@ -24,3 +24,9 @@ supabase/.temp/** linguist-vendored=true
 # PDFs are binary even when they carry no NUL byte (ReportLab output),
 # so line-ending conversion must never touch them.
 *.pdf binary
+
+# Line endings: the repo stores LF and checks out LF on every OS, so a copy that
+# passes through Windows no longer shows every file as modified. Batch files are
+# the exception — cmd.exe mishandles labels in LF .bat files.
+* text=auto eol=lf
+*.bat text eol=crlf

@@ -5,6 +5,7 @@
     "node": "24.x"
   },
   "scripts": {
+    "dev": "npx serve -l 5502 .",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:edge": "deno test --config supabase/functions/deno.json --allow-env --allow-net supabase/functions/chat/chat.test.ts",
